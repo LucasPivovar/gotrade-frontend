@@ -1,8 +1,3 @@
-import Panel from './panel';
-import { getUser } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import WorkspacePage from '@/components/workspace-page';
 export const dynamic = 'force-dynamic';
-export default async function Home() {
-  if (!(await getUser())) redirect('/login');
-  return <Panel />;
-}
+export default function Page(){return <WorkspacePage view="connections"/>;}

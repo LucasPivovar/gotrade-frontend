@@ -1,23 +1,11 @@
-# TradingPro - protótipo visual
+# Plataforma demonstrativa Gotrade
 
-Versão estática extraída do pacote fornecido e adaptada para demonstração.
+Aplicação estática adaptada para demonstração. Saldo, gráfico, ordens, robô, histórico e suporte usam dados simulados. Não envia ordens financeiras reais.
 
-- Não depende do servidor original.
-- Não envia credenciais, ordens ou dados para APIs de trading.
-- O botão **Entrar** aceita campos vazios e abre a plataforma.
-- `/prototipo` abre diretamente o login, sem landing page.
-- Login, recuperação e redefinição de senha usam o template e a identidade escolhidos no painel.
-- A paleta de tons e contraste é compartilhada com o painel. A prévia renderiza o próprio login, sem vídeos ou chamadas ao backend.
-- Saldo, gráfico, operações, robô, histórico, configurações, checkout e suporte usam dados simulados no navegador.
+A marca vem do banco pelo endpoint `/api/branding?tenant=<UUID>`. Abra `/prototipo?tenant=<UUID>` pelo painel para carregar nome e paleta da operação. A identificação continua na URL durante a navegação. Comunicação entre abas é isolada por tenant; nomes/cores não são buscados em um localStorage compartilhado.
 
-Para abrir localmente:
+O login visual tem um layout fixo. O botão Entrar é demonstrativo e aceita campos vazios; ele não substitui a autenticação real do painel administrativo. Cadastro pago e checkout estão desativados.
 
-```powershell
-node serve.mjs
-```
+`branding.js` carrega a identidade; `auth.js` e `auth.css` renderizam a autenticação demonstrativa; `palette.js` é gerado de `lib/brand-palette.ts` por `scripts/assets.mjs`. Alterações no bundle arquivado são feitas pelo script `scripts/patch-bundle.mjs`, sem edição manual do minificado.
 
-Depois acesse `http://127.0.0.1:4173/prototipo`.
-
-Com o painel em execução (`npm run dev` na raiz), use `http://127.0.0.1:5173/prototipo` para compartilhar as alterações de identidade em tempo real.
-
-`auth.js` e `auth.css` contêm os cinco templates. `palette.js` é gerado de `lib/brand-palette.ts` por `scripts/assets.mjs`. As adaptações do bundle arquivado ficam em `scripts/patch-bundle.mjs`.
+Use `npm run dev` na raiz para carregar a marca persistida. O servidor estático `node prototipo/serve.mjs` não fornece o banco nem `/api/branding`.

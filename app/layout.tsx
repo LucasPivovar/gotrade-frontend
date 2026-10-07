@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './panel.css';
-import './builder.css';
+import './gotrade.css';
 import { demoEnabled } from '@/lib/demo';
 import DemoSwitcher from '@/components/demo-switcher';
 export const metadata: Metadata = {
-  title: 'TradingPro | White Label',
-  description: 'Gestão de operações, identidade e checkouts TradingPro.',
+  title: 'Gotrade',
+  description: 'Suas conexões e sua plataforma em um só lugar.',
 };
 export default function RootLayout({
   children,

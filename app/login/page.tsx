@@ -1,3 +1,4 @@
+import ServiceUnavailable from '@/components/service-unavailable';
 import { redirect } from 'next/navigation';
 import { getUser } from '@/lib/auth';
 import LoginForm from '@/components/login-form';
@@ -9,6 +10,12 @@ export default async function Page({
   searchParams: Promise<{ invite?: string }>;
 }) {
   const params = await searchParams;
-  if (!demoEnabled() && !params.invite && (await getUser())) redirect('/');
+  let user;
+  try {
+    user = await getUser();
+  } catch {
+    return <ServiceUnavailable />;
+  }
+  if (!demoEnabled() && !params.invite && user) redirect('/');
   return <LoginForm invite={params.invite} demo={demoEnabled()} />;
 }

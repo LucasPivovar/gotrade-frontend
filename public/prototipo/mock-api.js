@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "tradingpro_prototype_state_v1";
+  const STORAGE_KEY = "gotrade_prototype_state_" + (new URLSearchParams(location.search).get("tenant") || "default");
   const now = Date.now();
 
   const defaultUser = {
@@ -181,6 +181,7 @@
   }
 
   function saveState() {
+    if (window.__GOTRADE_PREVIEW__) return;
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 

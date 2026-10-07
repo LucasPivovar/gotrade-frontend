@@ -15,12 +15,13 @@
     React.useEffect(() => {
       const update = (event) => setBrand(event.detail || {});
       window.addEventListener('whitelabel:update', update);
+      setBrand(window.__WHITELABEL_BRANDING__ || {});
       return () => window.removeEventListener('whitelabel:update', update);
     }, []);
     const mode = options.mode;
     const params = new URLSearchParams(window.location.search);
     const skeleton = params.get('skeleton') === '1';
-    const selectedTemplate = skeleton ? params.get('loginTemplate') : brand.loginTemplate;
+    const selectedTemplate = 'split';
     const template = ['split', 'centered', 'hero', 'glassmorphism', 'minimal'].includes(selectedTemplate) ? selectedTemplate : 'split';
     const bar = (width = '100%', size = 'small') => h('div', { className: 'tp-auth-placeholder tp-auth-placeholder-' + size, style: { width } });
     const go = (path) => { setError(''); setSent(false); options.navigate(path); };
@@ -57,7 +58,7 @@
         mode === 'login' ? h('div', { className: 'tp-auth-options' }, h('label', {}, h('input', { type: 'checkbox' }), 'Lembrar de mim'), link('Esqueci minha senha', '/forgot')) : null,
         error ? h('p', { role: 'alert', className: 'tp-auth-error' }, error) : null,
         h('button', { className: 'tp-auth-submit', disabled: busy }, busy ? 'Entrando...' : mode === 'forgot' ? 'Enviar link' : mode === 'reset' ? 'Salvar nova senha' : 'Entrar', symbol('arrow-up-right', 17))),
-      mode !== 'login' ? h('div', { className: 'tp-auth-back' }, link('Voltar ao login', '/login')) : h('p', { className: 'tp-auth-footer' }, 'Ainda não tem uma conta? ', link('Criar conta', '/assinar')));
+      mode !== 'login' ? h('div', { className: 'tp-auth-back' }, link('Voltar ao login', '/login')) : h('p', { className: 'tp-auth-footer' }, 'Ambiente demonstrativo. Nenhuma ordem real é enviada.'));
     const skeletonForm = h('div', { className: 'tp-auth-form tp-auth-skeleton-form' },
       bar('38%'), bar('90%', 'title'), bar('78%'),
       h('div', { className: 'tp-auth-field' }, bar('25%'), h('div', { className: 'tp-auth-placeholder-input' }, bar('48%'))),

@@ -37,14 +37,12 @@ export async function seedAdmin() {
       'Configure ADMIN_EMAIL e ADMIN_PASSWORD (mínimo 12 caracteres).',
     );
   const exists = await query('SELECT id FROM accounts WHERE email=?', [email]);
-  const hash = await hashPassword(password!);
   if (!exists.rows.length) {
+    const hash = await hashPassword(password!);
     await query(
       'INSERT OR IGNORE INTO accounts(id,email,password,created) VALUES(?,?,?,?)',
       [crypto.randomUUID(), email, hash, Date.now()],
     );
-  } else {
-    await query('UPDATE accounts SET password=? WHERE email=?', [hash, email]);
   }
 }
 export async function getUser() {

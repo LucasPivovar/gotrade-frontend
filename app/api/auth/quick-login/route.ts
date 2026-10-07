@@ -1,7 +1,9 @@
 import { seedAdmin, createSession, sameOrigin } from '@/lib/auth';
 import { query } from '@/lib/database';
+import { demoEnabled } from '@/lib/demo';
 
 export async function POST(request: Request) {
+  if (!demoEnabled()) return new Response(null, { status: 404 });
   if (!sameOrigin(request)) {
     return Response.json({ error: 'Origem inválida.' }, { status: 403 });
   }
@@ -33,6 +35,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  if (!demoEnabled()) return new Response(null, { status: 404 });
   try {
     await seedAdmin();
     const email =

@@ -31,10 +31,10 @@ function useLoginForm(invite?: string) {
   const [error, setError] = useState('');
 
   function getTarget() {
-    if (typeof window === 'undefined') return '/dashboard';
+    if (typeof window === 'undefined') return '/connections';
     const params = new URLSearchParams(window.location.search);
     const target = params.get('redirect');
-    return target && target.startsWith('/') && !target.startsWith('//') && !target.startsWith('/prototipo') ? target : '/dashboard';
+    return target && ['/connections', '/platform', '/settings', '/tenants'].includes(target) ? target : '/connections';
   }
 
   async function submit(demo: boolean) {
@@ -95,7 +95,7 @@ function useLoginForm(invite?: string) {
 
 // ── Shared form fields ─────────────────────────────────────────────────────
 function LoginFields({
-  invite, demo, branding, form,
+  invite, demo, form,
 }: {
   invite?: string;
   demo: boolean;
@@ -156,21 +156,9 @@ function LoginFields({
       </label>
       {error && <p className="login-error" role="alert">{error}</p>}
       <button className="primary" disabled={busy}>
-        {busy ? 'Autenticando…' : invite ? 'Ativar conta' : 'Entrar no Console'}
+        {busy ? 'Autenticando…' : invite ? 'Ativar conta' : demo ? 'Entrar na demonstração' : 'Entrar'}
         <ArrowUpRight size={17} />
       </button>
-      {!invite && (
-        <div className="quick-autofill-row">
-          <span>Ambiente local:</span>
-          <button
-            type="button"
-            className="autofill-link"
-            onClick={() => { setEmail('admin@whitelabel.local'); setPassword('BY7Nt7AxjCeJTo4iBUqS'); }}
-          >
-            Preencher credenciais de teste
-          </button>
-        </div>
-      )}
 
     </form>
   );
@@ -186,23 +174,23 @@ function TemplateSplit({ invite, demo, branding }: { invite?: string; demo: bool
           {branding.logo
             ? <img src={branding.logo} alt={branding.name} style={{ height: 38, width: 38, objectFit: 'contain', borderRadius: 10 }} />
             : <Zap fill="currentColor" />}
-          <span className="login-brand-name">{branding.name}<small>Console White Label</small></span>
+          <span className="login-brand-name">{branding.name}</span>
         </Link>
         <div className="login-intro-copy">
-          <span className="login-eyebrow"><ShieldCheck size={14} /> GESTÃO WHITE LABEL</span>
-          <h2>Uma visão clara<br />de toda a<br />operação.</h2>
-          <p>Tenants, checkouts de alta conversão, domínios próprios e conexões de corretoras reunidos em uma infraestrutura desenhada para decisões rápidas.</p>
+          <span className="login-eyebrow"><ShieldCheck size={14} /> SUA PLATAFORMA, DO SEU JEITO</span>
+          <h2>Conecte.<br />Personalize.<br />Simplifique.</h2>
+          <p>Acesse suas conexões e defina o nome e as cores da sua plataforma em poucos passos.</p>
           <div className="login-feature-pills">
-            <span className="feature-pill"><Check size={13} /> Multi-tenant Isolado</span>
-            <span className="feature-pill"><Check size={13} /> SSL Wildcard Dedicado</span>
-            <span className="feature-pill"><Check size={13} /> Snapshots SHA-256</span>
+            <span className="feature-pill"><Check size={13} /> Conexões</span>
+            <span className="feature-pill"><Check size={13} /> Plataforma</span>
+            <span className="feature-pill"><Check size={13} /> Configurações</span>
           </div>
         </div>
         <div className="login-platform">
           <Activity size={20} />
           <div>
-            <span>Infraestrutura da Plataforma</span>
-            <small>Status 100% Operacional · Latência ~15ms</small>
+            <span>{demo ? 'Ambiente de demonstração' : 'Seu espaço de trabalho'}</span>
+            <small>{demo ? 'Dados de trading simulados' : 'Entre para gerenciar sua plataforma'}</small>
           </div>
         </div>
       </section>
@@ -216,6 +204,6 @@ function TemplateSplit({ invite, demo, branding }: { invite?: string; demo: bool
 
 // Administrative authentication is independent of the prototype's branding.
 export default function LoginForm({ invite, demo = false }: { invite?: string; demo?: boolean }) {
-  const branding: Branding = { name: 'White Label', color: '#96d600', logo: '', loginTemplate: 'split' };
+  const branding: Branding = { name: 'Gotrade', color: '#96d600', logo: '', loginTemplate: 'split' };
   return <TemplateSplit invite={invite} demo={demo} branding={branding} />;
 }

@@ -298,6 +298,7 @@ export function getTenantUsers(tenant: Tenant): TenantUser[] {
   if (tenant.users && tenant.users.length > 0) {
     return tenant.users;
   }
+  if (!tenant.email) return [];
   return [
     {
       id: `${tenant.id}-primary`,
@@ -328,15 +329,16 @@ export function validateTenant(t: Tenant) {
     'logo',
     'domain',
   ]);
-  if (!/^[a-f0-9-]{36}$/.test(t.id) || !t.admin.trim())
+  if (!/^[a-f0-9-]{36}$/.test(t.id) || (!!t.email !== !!t.admin.trim()))
     throw Error('Administrador ou identificação inválida.');
   if (
     !t ||
     !t.name?.trim() ||
     t.name.length > 100 ||
     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(t.slug) ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.email) ||
+    (t.email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.email)) ||
     !/^#[0-9a-f]{6}$/i.test(t.color) ||
+    (t.secondaryColor !== undefined && !/^#[0-9a-f]{6}$/i.test(t.secondaryColor)) ||
     !validImage(t.logo) ||
     (t.favicon && !validImage(t.favicon)) ||
     !['active', 'suspended'].includes(t.status) ||

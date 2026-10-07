@@ -1,8 +1,11 @@
 (function () {
   'use strict';
-  const STORAGE_KEY = 'whitelabel_tenant_branding';
-  const CHANNEL_NAME = 'whitelabel_branding';
-  let currentBranding = { name: 'TradingPro', color: '#96d600', secondaryColor: '#ffffff', logo: '', favicon: '', font: 'Inter', loginTemplate: 'split' };
+  const tenantId = new URLSearchParams(window.location.search).get('tenant') || '';
+  const preview = new URLSearchParams(window.location.search).get('preview') === '1' && window.parent !== window;
+  window.__GOTRADE_PREVIEW__ = preview;
+  let previewBrand = null;
+  const fetchBrand = window.fetch.bind(window);
+  let currentBranding = { id: tenantId || 'default', name: 'Gotrade', color: '#96d600', secondaryColor: '#ffffff', logo: '', favicon: '', font: 'Inter', loginTemplate: 'split' };
   let initialized = false;
   function isSameBranding(a, b) {
     return ['name', 'color', 'secondaryColor', 'logo', 'favicon', 'font', 'darkMode', 'loginTemplate'].every((key) => a[key] === b[key]);
@@ -51,38 +54,88 @@
     const link = document.createElement('link'); link.rel = 'icon'; link.href = iconUrl; document.head.appendChild(link);
   }
   function applyBrandTextAndLogo(branding) {
-    document.title = `${branding.name || 'TradingPro'} | Plataforma de Trading`;
+    document.title = `${branding.name || 'Gotrade'} | Plataforma de Trading`;
     updateFavicons(branding);
   }
-  function applyAll(branding, persist = false) {
+  function applyAll(branding) {
     if (!branding || typeof branding !== 'object') return;
-    const next = { ...currentBranding, ...branding };
+    if (tenantId && branding.id !== tenantId) return;
+    const next = { ...currentBranding, ...branding, loginTemplate: 'split' };
     if (initialized && isSameBranding(next, currentBranding)) return;
     initialized = true;
     currentBranding = next;
     window.__WHITELABEL_BRANDING__ = next;
     applyColors(next);
     applyBrandTextAndLogo(next);
-    if (persist) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {} }
     window.dispatchEvent(new CustomEvent('whitelabel:update', { detail: next }));
   }
-  let stored = {};
-  try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}; } catch {}
-  const params = new URLSearchParams(window.location.search);
-  const query = {};
-  ['name', 'color', 'secondaryColor', 'logo', 'favicon', 'font', 'loginTemplate'].forEach((key) => { if (params.has(key)) query[key] = params.get(key); });
-  if (params.has('template')) query.loginTemplate = params.get('template');
-  applyAll({ ...stored, ...query }, params.get('preview') !== '1');
-  if (typeof BroadcastChannel !== 'undefined') {
-    const channel = new BroadcastChannel(CHANNEL_NAME);
-    channel.onmessage = (event) => { if (event.data?.type === 'WHITELABEL_BRANDING_UPDATE') applyAll(event.data.branding, params.get('preview') !== '1'); };
+  // Keep the selected platform in the URL throughout the archived SPA's navigation.
+  if (tenantId) {
+    ['pushState', 'replaceState'].forEach((method) => {
+      const original = history[method].bind(history);
+      history[method] = function (state, title, target) {
+        if (target != null) {
+          const url = new URL(target, window.location.href);
+          if (url.origin === location.origin && (url.pathname.startsWith('/app') || url.pathname.startsWith('/prototipo'))) {
+            url.searchParams.set('tenant', tenantId);
+            if (preview) url.searchParams.set('preview', '1');
+            target = url.pathname + url.search + url.hash;
+          }
+        }
+        return original(state, title, target);
+      };
+    });
   }
-  window.addEventListener('message', (event) => {
-    if (event.origin === window.location.origin && event.data?.type === 'WHITELABEL_BRANDING_UPDATE') applyAll(event.data.branding, params.get('preview') !== '1');
+  const gateStyle = document.createElement('style');
+  gateStyle.textContent = 'html[data-brand-loading] #root,html[data-brand-error] #root{display:none!important}#gotrade-brand-status{position:fixed;inset:0;z-index:99999;background:#191919;color:#e8ece5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center;font:14px Inter,system-ui,sans-serif}#gotrade-brand-status button{padding:12px 18px;background:#96d600;color:#151a0b;border:0;border-radius:8px;cursor:pointer}';
+  document.head.appendChild(gateStyle);
+  function status(message, failed = false) {
+    const render = () => {
+      if (!document.documentElement.hasAttribute('data-brand-loading') && !document.documentElement.hasAttribute('data-brand-error')) return;
+      if (!failed && document.documentElement.hasAttribute('data-brand-error')) return;
+      let element = document.getElementById('gotrade-brand-status');
+      if (!element) { element = document.createElement('div'); element.id = 'gotrade-brand-status'; document.body.appendChild(element); }
+      element.replaceChildren();
+      element.setAttribute('role', failed ? 'alert' : 'status');
+      const text = document.createElement('p'); text.textContent = message; element.appendChild(text);
+      if (failed) { const retry = document.createElement('button'); retry.textContent = 'Tentar novamente'; retry.onclick = () => void loadBrand(); element.appendChild(retry); }
+    };
+    if (document.body) render(); else document.addEventListener('DOMContentLoaded', render, { once: true });
+  }
+  let loading = false;
+  async function loadBrand() {
+    if (loading) return;
+    loading = true;
+    document.documentElement.setAttribute('data-brand-loading', '');
+    document.documentElement.removeAttribute('data-brand-error');
+    status('Carregando sua plataforma…');
+    try {
+      const response = await fetchBrand('/api/branding' + (tenantId ? '?tenant=' + encodeURIComponent(tenantId) : ''), { cache: 'no-store' });
+      const brand = await response.json();
+      if (!response.ok) throw Error(brand.error || 'Não foi possível carregar a plataforma.');
+      applyAll({ ...brand, ...previewBrand });
+      if (preview) window.parent.postMessage({ type: 'GOTRADE_PREVIEW_READY', tenantId }, location.origin);
+      document.documentElement.removeAttribute('data-brand-loading');
+      document.getElementById('gotrade-brand-status')?.remove();
+    } catch (error) {
+      document.documentElement.removeAttribute('data-brand-loading');
+      document.documentElement.setAttribute('data-brand-error', '');
+      status(error.message || 'Não foi possível carregar a plataforma.', true);
+    } finally { loading = false; }
+  }
+  if (!preview && tenantId && typeof BroadcastChannel !== 'undefined') {
+    const channel = new BroadcastChannel('gotrade_branding_' + tenantId);
+    channel.onmessage = (event) => { if (event.data?.tenantId === tenantId && event.data?.type === 'WHITELABEL_BRANDING_UPDATE') void loadBrand(); };
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) void loadBrand(); });
+  if (preview) window.addEventListener('message', (event) => {
+    if (event.source !== window.parent || event.origin !== location.origin || event.data?.type !== 'GOTRADE_PREVIEW_BRANDING' || event.data.tenantId !== tenantId) return;
+    const brand = event.data.branding;
+    if (!brand || typeof brand.name !== 'string' || !brand.name.trim() || brand.name.length > 100 || !/^#[0-9a-f]{6}$/i.test(brand.color) || !/^#[0-9a-f]{6}$/i.test(brand.secondaryColor)) return;
+    previewBrand = { name: brand.name.trim(), color: brand.color, secondaryColor: brand.secondaryColor };
+    applyAll({ ...currentBranding, ...previewBrand });
   });
-  window.addEventListener('storage', (event) => {
-    if (event.key === STORAGE_KEY && event.newValue) { try { applyAll(JSON.parse(event.newValue)); } catch {} }
-  });
+  void loadBrand();
   window.__WHITELABEL_BRANDING_CONTROLLER__ = { setBranding: applyAll, getBranding: () => currentBranding };
   // Routing belongs to the SPA router; never redirect into the administrative login.
 })();

@@ -1,57 +1,31 @@
-# GitHub e Vercel
+# Gotrade na Vercel
 
-## Prototipo ativo
+Importe o repositório LucasPivovar/gotrade-frontend e selecione Next.js. A raiz do projeto é a raiz do repositório. Use Node.js 24, instalação npm ci e build npm run build. Não configure exportação estática nem uma reescrita universal para index.html.
 
-No modo demo, o formulario aceita qualquer preenchimento (ou campos vazios) e abre o tenant. O seletor fixo no canto inferior direito alterna Tenant/Super admin. A identidade demo nao depende de sessoes SQLite; o cookie apenas seleciona o perfil. A rota `/` tambem abre diretamente o tenant sem login. Esse acesso livre existe apenas com DEMO_MODE=true.
+## Variáveis obrigatórias
 
-O `vercel.json` ativa `DEMO_MODE=true`. Nesse modo, o servidor usa SQLite temporario em `/tmp`, sem Turso ou variaveis de admin. Login: `admin@tradingpro.io` / `DemoAdmin2026!` e `tenant@tradingpro.io` / `DemoTenant2026!`. Sao credenciais publicas exclusivas de demonstracao.
+- TURSO_DATABASE_URL: URL libsql:// de um banco Turso remoto.
+- TURSO_AUTH_TOKEN: token desse banco (somente servidor).
+- ADMIN_EMAIL: e-mail do administrador inicial.
+- ADMIN_PASSWORD: senha inicial de 12 a 128 caracteres. A criação não redefine senhas de contas existentes.
+- DEMO_MODE: false. O modo compartilhado de demonstração é bloqueado em VERCEL_ENV=production.
 
-Dados, imagens e sessoes podem desaparecer quando uma instancia for recriada. Instancias diferentes podem ter bancos diferentes; isso pode exigir novo login. Todos os visitantes compartilham os dados ficticios daquela instancia. Nao inserir dados reais. Para uso persistente, altere DEMO_MODE para false e configure o Turso conforme abaixo.
+Não use banco file: na Vercel. Não exponha essas variáveis com NEXT_PUBLIC_. Um banco ausente ou indisponível gera uma resposta recuperável, não um workspace compartilhado nem sucesso fictício.
 
-O diretorio `painel` e a raiz da aplicacao Next.js. A publicacao nao depende de Sites ou Cloudflare Workers.
+## Rotas e recuperação
 
-Frontend React e backend ficam neste mesmo repositorio e no mesmo projeto Vercel. As paginas sao servidas por `app/` e as APIs por `app/api/`, no mesmo dominio. Nao e necessario hospedar Express, configurar CORS ou criar um segundo deploy. Apenas o banco persistente fica no Turso.
+O Next.js atende /login, /connections, /platform, /settings e /tenants, inclusive atualização direta. Sem sessão, as páginas privadas redirecionam para o acesso. As páginas têm loading, error e global-error; falhas de consulta da sessão exibem uma tela com tentativa novamente.
 
-## GitHub
+/prototipo/app/history e outras rotas internas sem extensão recebem o HTML do protótipo. /app/... redireciona para /prototipo/app/... preservando tenant e demais parâmetros. Arquivos ausentes continuam 404 e não recebem HTML no lugar de JavaScript. outputFileTracingIncludes inclui os arquivos de prototipo nas funções da Vercel. [Documentação oficial](https://vercel.com/kb/guide/how-can-i-use-files-in-serverless-functions).
 
-Crie o repositorio com o conteudo desta pasta na raiz. O arquivo `.github/workflows/ci.yml` instala dependencias, verifica TypeScript, executa testes unitarios, compila e testa o navegador. Se usar o repositorio pai `trade`, configure `painel` como Root Directory na Vercel e ajuste o working-directory do workflow.
+Um endereço desconhecido continua HTTP 404 com uma página útil. Falhas de banco nas APIs principais retornam 503 sem detalhes internos. IDs desconhecidos retornam 404, operações suspensas 403 e conflitos de revisão 409. Não é possível garantir ausência absoluta de 500 em infraestrutura externa.
 
-O `.gitignore` exclui credenciais, bancos locais, builds e capturas. Nao inclua `.env.local`, `data/`, `test-results/` ou `outputs/` no commit. O lockfile deve ser incluido.
+## Multitenancy
 
-## Banco
+O servidor obtém a operação pela sessão. O tenant recebe somente sua operação, sem o histórico de outros tenants, e só pode editar nome e duas cores. Admin gerencia tenants do próprio workspace. A marca pública retorna apenas campos públicos para um UUID explícito. O protótipo usa armazenamento local por tenant; a prévia transmite alterações temporárias sem salvar.
 
-Crie um banco Turso e obtenha sua URL `libsql://...` e um token de acesso. Em producao, os registros e imagens usam esse banco remoto. O SQLite local e apenas para desenvolvimento: o filesystem das functions Vercel nao e armazenamento persistente.
+Checkout, personalização de login e backup legado estão fora desta versão. O protótipo financeiro continua simulado: conexão com corretoras, saldo e ordens não são integrações reais.
 
-O esquema inicial e aplicado de forma idempotente pelo servidor em `lib/database.ts`. Nenhuma senha ou conta de demonstracao e fixa no codigo. Para versoes futuras, adicione migracoes versionadas antes de alterar tabelas existentes.
+## Verificação após deploy
 
-## Vercel
-
-1. Importe o repositorio, com framework **Next.js** e Node.js **24.x**.
-2. Configure as variaveis abaixo em Production e, se necessario, Preview.
-3. Execute o deploy com `npm run build`; o start e gerenciado pela Vercel.
-4. Acesse `/login`. A primeira tentativa de login inicializa a conta de super admin definida no ambiente.
-
-| Variavel | Valor |
-| --- | --- |
-| `TURSO_DATABASE_URL` | URL remota do banco |
-| `TURSO_AUTH_TOKEN` | Token do banco |
-| `ADMIN_EMAIL` | E-mail do super admin |
-| `ADMIN_PASSWORD` | Senha inicial forte, entre 12 e 128 caracteres |
-
-Use bancos distintos para Preview e Production. Alterar `ADMIN_PASSWORD` depois que a conta foi criada nao redefine a senha existente. A senha e armazenada como hash scrypt; para reset administrativo use o procedimento controlado no banco ou implemente um fluxo de recuperacao antes da abertura comercial.
-
-## Validar o deploy
-
-- Login e logout; tentativa incorreta rejeitada.
-- Nova operacao; gerar convite em **Acesso e dominio** e ativar a conta em outra sessao.
-- Tenant sem acesso de super admin e sem dados de outras operacoes.
-- Salvar layout, recarregar, publicar e conferir `/checkout/<id>` em celular e desktop.
-- Enviar um banner e confirmar que persiste apos novo deploy.
-
-Os convites sao de uso unico, expiram em 24h e precisam ser compartilhados manualmente. Nenhum e-mail e enviado automaticamente.
-
-## Limites do MVP
-
-O projeto permite demonstrar a administracao e a montagem/publicacao visual de ofertas. Gateway e webhooks, execucao de conexoes, DNS customizado, disparo de pixels, e-mails e recuperacao de senha ainda precisam das integracoes reais da TradingPro. A pagina publicada informa que o gateway nao esta conectado e nao envia dados do comprador.
-
-Imagens PNG/JPEG/WebP limitadas a 400 KB ficam no banco para simplificar o deploy. Para maior volume, migre o adapter de midia para object storage. Cada workspace tem limite aproximado de 1,7 MB de configuracoes; ate 40 blocos por checkout e 12 campos por formulario. Os dados gerenciais sao um documento JSON com revisao otimista: edicoes concorrentes conflitantes sao rejeitadas.
+Abra /login; entre e atualize /platform diretamente; salve nome/cores; abra /prototipo/app?tenant=UUID e atualize a página; teste dois tenants e o acesso negado a outro UUID. Confira que /pagina-inexistente e um asset ausente retornam 404. Confirme as variáveis antes de liberar clientes.

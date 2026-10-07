@@ -1,3 +1,4 @@
+import { ServiceUnavailableError } from './service';
 import { createClient, type Client, type InValue } from '@libsql/client';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,7 +18,10 @@ function connection() {
       );
     if (process.env.VERCEL && !demoEnabled() && url.startsWith('file:'))
       throw Error('A Vercel exige um banco remoto Turso.');
-    client = createClient({ url, authToken: demoEnabled() ? undefined : process.env.TURSO_AUTH_TOKEN });
+    client = createClient({
+      url,
+      authToken: demoEnabled() ? undefined : process.env.TURSO_AUTH_TOKEN,
+    });
   }
   return client;
 }
@@ -40,7 +44,9 @@ export async function initialize() {
       .then(async () => {
         if (!demoEnabled()) return;
         const db = connection();
-        const existing = await db.execute("SELECT owner FROM workspaces WHERE owner='demo-admin'");
+        const existing = await db.execute(
+          "SELECT owner FROM workspaces WHERE owner='demo-admin'",
+        );
         if (existing.rows.length) return;
         const state = initialState(demoAccounts[1].email);
         state.tenants[0].id = '10000000-0000-4000-8000-000000000001';
@@ -49,15 +55,30 @@ export async function initialize() {
         state.checkouts[0].id = '20000000-0000-4000-8000-000000000001';
         state.checkouts[0].published = true;
         state.checkouts[0].publishedData = JSON.stringify(state.checkouts[0]);
-        state.activity = [{ id: crypto.randomUUID(), text: 'Ambiente de demonstração iniciado', time: new Date().toISOString() }];
-        await db.batch([
-          ...demoAccounts.map((account) => {
-            const salt = randomBytes(16).toString('hex');
-            const password = `${salt}:${scryptSync(account.password, salt, 64).toString('hex')}`;
-            return { sql: 'INSERT OR IGNORE INTO accounts(id,email,password,created) VALUES(?,?,?,?)', args: [account.id, account.email, password, Date.now()] };
-          }),
-          { sql: 'INSERT OR IGNORE INTO workspaces(owner,data,revision) VALUES(?,?,0)', args: ['demo-admin', JSON.stringify(state)] },
-        ], 'write');
+        state.activity = [
+          {
+            id: crypto.randomUUID(),
+            text: 'Ambiente de demonstração iniciado',
+            time: new Date().toISOString(),
+          },
+        ];
+        await db.batch(
+          [
+            ...demoAccounts.map((account) => {
+              const salt = randomBytes(16).toString('hex');
+              const password = `${salt}:${scryptSync(account.password, salt, 64).toString('hex')}`;
+              return {
+                sql: 'INSERT OR IGNORE INTO accounts(id,email,password,created) VALUES(?,?,?,?)',
+                args: [account.id, account.email, password, Date.now()],
+              };
+            }),
+            {
+              sql: 'INSERT OR IGNORE INTO workspaces(owner,data,revision) VALUES(?,?,0)',
+              args: ['demo-admin', JSON.stringify(state)],
+            },
+          ],
+          'write',
+        );
       })
       .catch((e) => {
         ready = undefined;
@@ -67,12 +88,20 @@ export async function initialize() {
   return ready;
 }
 export async function query(sql: string, args: InValue[] = []) {
-  await initialize();
-  return connection().execute({ sql, args });
+  try {
+    await initialize();
+    return await connection().execute({ sql, args });
+  } catch {
+    throw new ServiceUnavailableError();
+  }
 }
 export async function transaction() {
-  await initialize();
-  return connection().transaction('write');
+  try {
+    await initialize();
+    return await connection().transaction('write');
+  } catch {
+    throw new ServiceUnavailableError();
+  }
 }
 // Small prepared-query adapter preserves existing workspace operations during migration.
 export function database() {

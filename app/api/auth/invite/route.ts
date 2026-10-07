@@ -24,6 +24,8 @@ export async function POST(request: Request) {
         { error: 'Operação indisponível.' },
         { status: 404 },
       );
+    if (!tenant.admin.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tenant.email))
+      return Response.json({ error: 'Configure um responsável e e-mail válido antes de gerar um convite.' }, { status: 400 });
     const existing = (
       await query('SELECT id FROM accounts WHERE email=?', [
         tenant.email.toLowerCase(),

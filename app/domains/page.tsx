@@ -1,10 +1,2 @@
-import Panel from '../panel';
-import { getUser } from '@/lib/auth';
-import { redirect } from 'next/navigation';
-
-export const dynamic = 'force-dynamic';
-
-export default async function DomainsPage() {
-  if (!(await getUser())) redirect('/login?redirect=/domains');
-  return <Panel initialView="domains" />;
-}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/connections');}

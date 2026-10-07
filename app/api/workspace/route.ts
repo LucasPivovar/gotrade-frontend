@@ -1,5 +1,7 @@
+import { ServiceUnavailableError } from '@/lib/service';
 import { database, workspace, scoped } from '@/lib/server';
-import {sameOrigin} from '@/lib/auth';
+import { sameOrigin } from '@/lib/auth';
+import { updateApplication } from '@/lib/application';
 import {
   validateTenant,
   validateCheckout,
@@ -8,6 +10,11 @@ import {
 } from '@/lib/model';
 export const dynamic = 'force-dynamic';
 function failure(e: unknown) {
+  if (e instanceof ServiceUnavailableError)
+    return Response.json(
+      { error: e.message },
+      { status: 503, headers: { 'Retry-After': '30' } },
+    );
   const msg = e instanceof Error ? e.message : 'Falha ao salvar.';
   return Response.json(
     { error: msg },
@@ -36,6 +43,11 @@ export async function POST(request: Request) {
     if (raw.length > 1800000)
       throw Error('As imagens excedem o limite do formulário.');
     const body = JSON.parse(raw);
+    if (['checkout', 'deleteCheckout'].includes(body.action))
+      return Response.json(
+        { error: 'Checkouts estão desativados nesta versão.' },
+        { status: 410 },
+      );
     const w = await workspace();
     const s = w.state;
     let event = '';
@@ -47,24 +59,24 @@ export async function POST(request: Request) {
         },
         { status: 409 },
       );
-    if (body.action === 'tenant') {
+    if (body.action === 'applicationBranding') {
+      const old = s.tenants.find((t) => t.id === body.value?.id);
+      if (!old || (w.role === 'tenant' && old.id !== w.tenantId))
+        throw Error('FORBIDDEN');
+      const updated = updateApplication(old, body.value);
+      s.tenants = s.tenants.map((t) => (t.id === old.id ? updated : t));
+      event = `Atualizou a plataforma ${updated.name}`;
+    } else if (body.action === 'tenant') {
+      if (w.role !== 'admin') throw Error('FORBIDDEN');
       const t = body.value as Tenant;
       validateTenant(t);
       const old = s.tenants.find((x) => x.id === t.id);
-      if (w.role === 'tenant') {
-        if (t.id !== w.tenantId || !old) throw Error('FORBIDDEN');
-        t.slug = old.slug;
-        t.email = old.email;
-        t.status = old.status;
-        t.connections = old.connections;
-        t.admin = old.admin;
-      }
       if (
         s.tenants.some(
           (x) =>
             x.id !== t.id &&
             (x.slug === t.slug ||
-              x.email.toLowerCase() === t.email.toLowerCase() ||
+              (t.email && x.email.toLowerCase() === t.email.toLowerCase()) ||
               (t.domain && x.domain === t.domain)),
         )
       )
@@ -112,7 +124,7 @@ export async function POST(request: Request) {
     } else if (body.action === 'settings') {
       if (w.role !== 'admin') throw Error('FORBIDDEN');
       s.settings = {
-        ...(s.settings || {}),
+        ...s.settings,
         ...body.value,
       };
       event = 'Atualizou as configurações globais da plataforma';

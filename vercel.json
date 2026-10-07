@@ -1,1 +1,5 @@
-{"framework":"nextjs","env":{"DEMO_MODE":"true"}}
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci"
+}

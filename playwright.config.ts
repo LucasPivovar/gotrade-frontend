@@ -1,8 +1,9 @@
 import { defineConfig } from '@playwright/test';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import {randomBytes} from 'node:crypto';
 if (existsSync('.env.local')) loadEnvFile('.env.local');
+mkdirSync('data', { recursive: true });
 process.env.TEST_ADMIN_PASSWORD ||= randomBytes(18).toString('hex');
 export default defineConfig({
   testDir: 'tests/e2e',

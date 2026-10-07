@@ -1,6 +1,6 @@
 import { database, query } from './database';
 import { requireUser } from './auth';
-import { initialState, mockCheckouts, mockActivities, type State } from './model';
+import { initialState, type State } from './model';
 export { database };
 export const identity = requireUser;
 export async function workspace() {
@@ -12,24 +12,6 @@ export async function workspace() {
     .first<{ owner: string; data: string; revision: number }>();
   if (row) {
     const state = JSON.parse(row.data) as State;
-    let modified = false;
-    const tenant = state.tenants[0];
-    if (tenant && (!state.checkouts || state.checkouts.length < 2)) {
-      const existingIds = new Set((state.checkouts || []).map((c) => c.id));
-      const mocks = mockCheckouts(tenant).filter((c) => !existingIds.has(c.id));
-      state.checkouts = [...(state.checkouts || []), ...mocks];
-      modified = true;
-    }
-    if (!state.activity || state.activity.length < 4) {
-      state.activity = mockActivities();
-      modified = true;
-    }
-    if (modified) {
-      await query('UPDATE workspaces SET data=? WHERE owner=?', [
-        JSON.stringify(state),
-        row.owner,
-      ]);
-    }
     return {
       user,
       row,
@@ -53,7 +35,12 @@ export async function workspace() {
   }
   if (user.email !== process.env.ADMIN_EMAIL?.trim().toLowerCase())
     throw Error('FORBIDDEN');
-  const state = initialState(user.email);
+  const state = {
+    ...initialState(user.email),
+    tenants: [],
+    checkouts: [],
+    activity: [],
+  };
   await query(
     'INSERT OR IGNORE INTO workspaces(owner,data,revision) VALUES(?,?,0)',
     [user.id, JSON.stringify(state)],
@@ -78,6 +65,6 @@ export function scoped(w: Awaited<ReturnType<typeof workspace>>) {
     checkouts: w.state.checkouts.filter(
       (c) => w.role === 'admin' || c.tenantId === w.tenantId,
     ),
-    activity: w.state.activity || [],
+    activity: w.role === 'admin' ? w.state.activity || [] : [],
   };
 }

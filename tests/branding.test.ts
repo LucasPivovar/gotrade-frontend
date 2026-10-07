@@ -137,10 +137,9 @@ void test('branding.js contains essential synchronization and styling mechanisms
 
   // Verify real-time listeners
   assert.ok(content.includes('BroadcastChannel'), 'must support BroadcastChannel');
-  assert.ok(content.includes('whitelabel_branding'), 'must use whitelabel_branding channel name');
+  assert.ok(content.includes('gotrade_branding_'), 'must scope the channel to the tenant');
   assert.ok(content.includes('WHITELABEL_BRANDING_UPDATE'), 'must handle WHITELABEL_BRANDING_UPDATE message');
-  assert.ok(content.includes('addEventListener(\'message\''), 'must support window postMessage for iframes');
-  assert.ok(content.includes('addEventListener(\'storage\''), 'must support storage events across tabs');
+  assert.ok(!content.includes('localStorage'), 'must resolve persisted branding from the server');
 
   // Verify DOM updates
   assert.ok(content.includes('applyBrandTextAndLogo'), 'must update brand text and logo in DOM');
@@ -148,13 +147,13 @@ void test('branding.js contains essential synchronization and styling mechanisms
   assert.ok(content.includes('document.title'), 'must update document title');
 });
 
-void test('public branding API route exists and supports CORS', () => {
+void test('public branding API resolves an explicit identity', () => {
   const routePath = join(process.cwd(), 'app', 'api', 'branding', 'route.ts');
   assert.ok(existsSync(routePath), 'app/api/branding/route.ts should exist');
 
   const content = readFileSync(routePath, 'utf-8');
-  assert.ok(content.includes('Access-Control-Allow-Origin'), 'must specify Access-Control-Allow-Origin');
-  assert.ok(content.includes('OPTIONS'), 'must provide OPTIONS handler for CORS preflight');
+  assert.ok(content.includes(".bind(id)"), 'must query the requested tenant');
+  assert.ok(content.includes('status: 404'), 'unknown identities must return 404');
   assert.ok(content.includes('GET'), 'must provide GET handler');
 });
 

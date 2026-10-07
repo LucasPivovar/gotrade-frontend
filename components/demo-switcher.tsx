@@ -7,7 +7,7 @@ export default function DemoSwitcher() {
   const path = usePathname();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  if (path !== '/') return null;
+  if (path === '/login' || path.startsWith('/prototipo') || path.startsWith('/app/')) return null;
   async function switchRole(role: 'tenant' | 'admin') {
     setBusy(true);
     setError('');
