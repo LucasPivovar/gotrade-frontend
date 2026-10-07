@@ -1,3 +1,5 @@
+import { cookies } from 'next/headers';
+import { demoEnabled } from '@/lib/demo';
 import {
   seedAdmin,
   verifyPassword,
@@ -43,12 +45,26 @@ export async function POST(request: Request) {
     const account = (
       await query('SELECT id,password FROM accounts WHERE email=?', [email])
     ).rows[0];
-    if (typeof account?.id !== 'string' || typeof account?.password !== 'string' || !(await verifyPassword(password, account.password)))
+    if (
+      typeof account?.id !== 'string' ||
+      typeof account?.password !== 'string' ||
+      !(await verifyPassword(password, account.password))
+    )
       return Response.json(
         { error: 'E-mail ou senha inválidos.' },
         { status: 401 },
       );
     await query('DELETE FROM login_attempts WHERE key=?', [key]);
+    if (demoEnabled()) {
+      const role = account.id === 'demo-admin' ? 'admin' : 'tenant';
+      (await cookies()).set('tradingpro_demo_role', role, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+      });
+      return Response.json({ ok: true, role });
+    }
     await createSession(account.id);
     return Response.json({ ok: true });
   } catch (error) {

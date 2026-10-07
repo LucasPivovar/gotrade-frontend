@@ -10,7 +10,7 @@ let ready: Promise<void> | undefined;
 function connection() {
   if (!client) {
     const url = demoEnabled()
-      ? `file:${join(tmpdir(), 'tradingpro-demo-v1.db').replaceAll('\\', '/')}`
+      ? `file:${join(tmpdir(), 'gotrade-sample-v3.db').replaceAll('\\', '/')}`
       : process.env.TURSO_DATABASE_URL;
     if (!url)
       throw Error(
@@ -50,7 +50,7 @@ export async function initialize() {
         if (existing.rows.length) return;
         const state = initialState(demoAccounts[1].email);
         state.tenants[0].id = '10000000-0000-4000-8000-000000000001';
-        state.tenants[0].admin = 'Administrador Demo';
+        state.tenants[0].admin = 'Minha conta';
         state.checkouts = [newCheckout(state.tenants[0])];
         state.checkouts[0].id = '20000000-0000-4000-8000-000000000001';
         state.checkouts[0].published = true;

@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './panel.css';
 import './gotrade.css';
-import { demoEnabled } from '@/lib/demo';
-import DemoSwitcher from '@/components/demo-switcher';
+
 export const metadata: Metadata = {
   title: 'Gotrade',
   description: 'Suas conexões e sua plataforma em um só lugar.',
@@ -27,7 +26,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}{demoEnabled() && <DemoSwitcher />}</body>
+      <body>{children}</body>
     </html>
   );
 }

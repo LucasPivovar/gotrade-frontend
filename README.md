@@ -37,3 +37,9 @@ Playwright usa a porta 5174 e banco independente. Capturas em `outputs/`. Consul
 ## Amostra pública
 
 A configuração da Vercel ativa DEMO_MODE=true: acesso livre, sem senha ou Turso. Os dados são demonstrativos e temporários. Para um ambiente real, desative DEMO_MODE e siga docs/DEPLOY.md.
+
+## Simplificação da amostra
+
+Acessos: tenant@gmail.com / tenant123 e admin@gmail.com / admin123. O login tem atalhos para preencher cada perfil. O seletor global de demonstração foi removido. A navegação interna preserva o painel, a URL e o histórico do navegador sem tela intermediária de carregamento. O topo mostra Meu perfil; o sidebar não exibe nome/e-mail da conta. Plataforma permite nome e uma cor de marca; os controles de operação mantêm verde fixo. A troca Demo/Real usa um botão D/Real ao lado do saldo, com dados simulados. Configurações permite alterar e-mail e senha; a atualização do e-mail é transacional e mantém o vínculo do tenant. Checkout e tokens de pagamento seguem fora desta versão.
+
+A plataforma nasce junto com o tenant. O formulário Plataforma permite domínio, logo, nome e cor. O domínio é apenas salvo nesta amostra: não configura DNS, não prova posse e não ativa roteamento por host. A logo enviada substitui a marca no cabeçalho e no acesso do protótipo. Uploads são vinculados ao tenant.

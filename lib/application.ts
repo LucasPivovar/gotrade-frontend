@@ -4,6 +4,8 @@ export type ApplicationBrand = {
   name: string;
   color: string;
   secondaryColor: string;
+  domain?: string;
+  logo?: string;
 };
 
 export function validateApplicationBrand(value: unknown): ApplicationBrand {
@@ -28,7 +30,39 @@ export function validateApplicationBrand(value: unknown): ApplicationBrand {
     name: input.name.trim(),
     color: input.color.toLowerCase(),
     secondaryColor: secondaryColor.toLowerCase(),
+    ...(input.domain !== undefined
+      ? { domain: validatePlatformDomain(input.domain) }
+      : {}),
+    ...(input.logo !== undefined
+      ? { logo: validatePlatformLogo(input.logo) }
+      : {}),
   };
+}
+
+export function validatePlatformDomain(value: unknown) {
+  if (typeof value !== 'string') throw Error('Informe um domínio válido.');
+  const domain = value.trim().toLowerCase();
+  if (!domain) return '';
+  if (
+    domain.length > 253 ||
+    !domain.includes('.') ||
+    !domain
+      .split('.')
+      .every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)) ||
+    /^\d+(\.\d+){3}$/.test(domain)
+  )
+    throw Error(
+      'Use apenas o domínio, como plataforma.com.br, sem https ou caminhos.',
+    );
+  return domain;
+}
+export function validatePlatformLogo(value: unknown) {
+  if (
+    typeof value !== 'string' ||
+    (value !== '' && !/^\/api\/media\/[a-f0-9-]{36}$/i.test(value))
+  )
+    throw Error('Envie uma logo válida pelo formulário.');
+  return value;
 }
 
 export function createApplication(value: unknown, tenants: Tenant[]): Tenant {

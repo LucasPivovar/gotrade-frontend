@@ -32,6 +32,7 @@
     let style = document.getElementById('whitelabel-brand-styles');
     if (!style) { style = document.createElement('style'); style.id = 'whitelabel-brand-styles'; document.head.appendChild(style); }
     style.textContent = `
+      .topbar-market-right{display:flex;align-items:center;gap:12px}.gotrade-account-toggle button{min-width:36px;height:34px;border:1px solid #ffffff26;border-radius:9px;background:#ffffff08;color:#c5d0c1;font-weight:700;cursor:pointer}.gotrade-account-toggle button:disabled{opacity:.5;cursor:not-allowed}.gotrade-account-toggle [role=alert]{font-size:11px;max-width:160px}
       .gotrade-trading-area{--lime:#96d600;--lime-dim:#79ae00;--brand-primary:#96d600;--brand-accent:#a3e635;--brand-rgb:150,214,0;--brand-hover:#79ae00;--brand-on-primary:#191919;--brand-on-hover:#191919;--brand-subtle:rgba(150,214,0,.12)}
       .btn-lime,.hero-primary,.tour-button{background:var(--brand-primary)!important;color:var(--brand-on-primary)!important}
       .btn-lime:hover{background:var(--brand-hover)!important;color:var(--brand-on-hover)!important}
@@ -136,7 +137,7 @@
     if (event.source !== window.parent || event.origin !== location.origin || event.data?.type !== 'GOTRADE_PREVIEW_BRANDING' || event.data.tenantId !== tenantId) return;
     const brand = event.data.branding;
     if (!brand || typeof brand.name !== 'string' || !brand.name.trim() || brand.name.length > 100 || !/^#[0-9a-f]{6}$/i.test(brand.color) || !/^#[0-9a-f]{6}$/i.test(brand.secondaryColor)) return;
-    previewBrand = { name: brand.name.trim(), color: brand.color, secondaryColor: brand.secondaryColor };
+    previewBrand = { name: brand.name.trim(), color: brand.color, secondaryColor: brand.secondaryColor, logo: typeof brand.logo === "string" ? brand.logo : "" };
     applyAll({ ...currentBranding, ...previewBrand });
   });
   void loadBrand();

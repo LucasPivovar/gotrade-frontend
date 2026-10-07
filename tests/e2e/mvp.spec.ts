@@ -86,7 +86,6 @@ test('admin manages tenants, edits platform identity and reloads saved data', as
     .getByLabel('Nome da plataforma', { exact: true })
     .fill('Alpha Atualizada');
   await page.getByLabel('Cor principal', { exact: true }).fill('#6366f1');
-  await page.getByLabel('Cor secundária', { exact: true }).fill('#22d3ee');
   const preview = page.frameLocator('iframe[title="Prévia do protótipo"]');
   await expect(preview.locator('canvas').first()).toBeVisible();
   await expect(
@@ -101,9 +100,16 @@ test('admin manages tenants, edits platform identity and reloads saved data', as
         ),
     )
     .toBe('#6366f1');
-  await expect(preview.locator('[data-tour="bot-start"]')).toHaveCSS('background-color', 'rgb(74, 222, 128)');
-  await expect(preview.getByText(/^(COMPRA|BUY)$/, {exact:true}).first()).toHaveCSS('color', 'rgb(74, 222, 128)');
-  await expect(preview.getByText('WIN (+$20.00)', {exact:true}).first()).toHaveCSS('color', 'rgb(74, 222, 128)');
+  await expect(preview.locator('[data-tour="bot-start"]')).toHaveCSS(
+    'background-color',
+    'rgb(74, 222, 128)',
+  );
+  await expect(
+    preview.getByText(/^(COMPRA|BUY)$/, { exact: true }).first(),
+  ).toHaveCSS('color', 'rgb(74, 222, 128)');
+  await expect(
+    preview.getByText('WIN (+$20.00)', { exact: true }).first(),
+  ).toHaveCSS('color', 'rgb(74, 222, 128)');
   expect(
     (await state(page.request)).state.tenants.some(
       (t) => t.name === 'Alpha Visual',
@@ -124,7 +130,7 @@ test('admin manages tenants, edits platform identity and reloads saved data', as
     (t) => t.name === 'Alpha Atualizada',
   )!;
   expect(tenant.color).toBe('#6366f1');
-  expect(tenant.secondaryColor).toBe('#22d3ee');
+  expect(tenant.secondaryColor).toBe('#ffffff');
   expect(stored.state.checkouts).toEqual([]);
   await page.reload();
   await expect(
@@ -189,7 +195,20 @@ test('tenant navigation, invitation, integrations and authorized branding update
   await expect(
     tenantPage.getByRole('heading', { name: 'Bybit', exact: true }),
   ).toBeVisible();
+  await tenantPage.evaluate(() => {
+    (window as unknown as { navigationMarker: string }).navigationMarker =
+      'persistent';
+  });
   await nav.getByRole('link', { name: 'Plataforma', exact: true }).click();
+  expect(
+    await tenantPage.evaluate(
+      () =>
+        (window as unknown as { navigationMarker: string }).navigationMarker,
+    ),
+  ).toBe('persistent');
+  await expect(
+    tenantPage.locator('.demo-switcher,.gt-account,.gt-role'),
+  ).toHaveCount(0);
   await tenantPage
     .getByLabel('Nome da plataforma', { exact: true })
     .fill('Minha Marca');
@@ -271,16 +290,43 @@ test('tenant navigation, invitation, integrations and authorized branding update
     .getByLabel('Confirmar nova senha', { exact: true })
     .fill('Tenant-New-Password-2026');
   await tenantPage
-    .getByRole('button', { name: 'Atualizar senha', exact: true })
+    .getByRole('button', { name: 'Salvar alterações', exact: true })
     .click();
   await expect(
-    tenantPage.getByRole('status').filter({ hasText: 'Senha atualizada.' }),
+    tenantPage.getByRole('status').filter({ hasText: 'Dados atualizados.' }),
   ).toBeVisible();
   await tenantPage
     .getByRole('button', { name: 'Sair da conta', exact: true })
     .click();
   await expect(tenantPage).toHaveURL(/\/login/);
   await tenantPage.getByLabel('E-mail', { exact: true }).fill(tenant.email);
+  await tenantPage
+    .getByLabel('Senha', { exact: true })
+    .fill('Tenant-New-Password-2026');
+  await tenantPage.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(
+    tenantPage.getByRole('heading', { name: 'Conexões', exact: true }),
+  ).toBeVisible();
+  const nextEmail = crypto.randomUUID() + '@example.test';
+  const duplicate = await context.request.post('/api/auth/profile', {
+    headers: { origin },
+    data: { email: 'admin@example.test' },
+  });
+  expect(duplicate.status()).toBe(409);
+  const changed = await context.request.post('/api/auth/profile', {
+    headers: { origin },
+    data: { email: nextEmail },
+  });
+  expect(changed.status()).toBe(200);
+  const changedSession = await state(context.request);
+  expect(changedSession.email).toBe(nextEmail);
+  expect(changedSession.state.tenants[0].email).toBe(nextEmail);
+  expect(changedSession.state.tenants).toHaveLength(1);
+  await tenantPage
+    .getByRole('button', { name: 'Sair da conta', exact: true })
+    .click();
+  await expect(tenantPage).toHaveURL(/\/login/);
+  await tenantPage.getByLabel('E-mail', { exact: true }).fill(nextEmail);
   await tenantPage
     .getByLabel('Senha', { exact: true })
     .fill('Tenant-New-Password-2026');

@@ -1,12 +1,17 @@
 import { query } from '@/lib/database';
-import {sameOrigin} from '@/lib/auth';
+import { sameOrigin } from '@/lib/auth';
 import { workspace } from '@/lib/server';
 export async function POST(request: Request) {
   try {
     if (!sameOrigin(request))
       return Response.json({ error: 'Origem inválida.' }, { status: 403 });
     const w = await workspace();
-    const file = (await request.formData()).get('file');
+    const form = await request.formData();
+    const tenantId = form.get('tenantId');
+    const tenant = w.state.tenants.find((t) => t.id === tenantId);
+    if (!tenant || (w.role === 'tenant' && tenant.id !== w.tenantId))
+      return Response.json({ error: 'Acesso negado.' }, { status: 403 });
+    const file = form.get('file');
     if (
       !(file instanceof File) ||
       file.size > 400000 ||
@@ -37,7 +42,7 @@ export async function POST(request: Request) {
     const id = crypto.randomUUID();
     await query('INSERT INTO media(id,owner,mime,bytes) VALUES(?,?,?,?)', [
       id,
-      w.row.owner,
+      tenant.id,
       file.type,
       bytes,
     ]);

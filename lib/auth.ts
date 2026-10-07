@@ -49,7 +49,13 @@ export async function getUser() {
   if (demoEnabled()) {
     const role = (await cookies()).get('tradingpro_demo_role')?.value;
     const account = demoAccounts[role === 'admin' ? 0 : 1];
-    return { id: account.id, email: account.email };
+    const stored = (
+      await query('SELECT email FROM accounts WHERE id=?', [account.id])
+    ).rows[0];
+    return {
+      id: account.id,
+      email: typeof stored?.email === 'string' ? stored.email : account.email,
+    };
   }
   const token = (await cookies()).get(cookieName)?.value;
   if (!token) return null;
@@ -58,7 +64,8 @@ export async function getUser() {
     [digest(token), Date.now()],
   );
   const account = r.rows[0];
-  if (typeof account?.id !== 'string' || typeof account?.email !== 'string') return null;
+  if (typeof account?.id !== 'string' || typeof account?.email !== 'string')
+    return null;
   return account ? { id: account.id, email: account.email } : null;
 }
 export async function requireUser() {
@@ -86,6 +93,7 @@ export async function revokeSession() {
   const token = jar.get(cookieName)?.value;
   if (token) await query('DELETE FROM sessions WHERE token=?', [digest(token)]);
   jar.delete(cookieName);
+  jar.delete('tradingpro_demo_role');
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get('origin');

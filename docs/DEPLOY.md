@@ -20,10 +20,16 @@ Um endereço desconhecido continua HTTP 404 com uma página útil. Falhas de ban
 
 ## Multitenancy
 
-O servidor obtém a operação pela sessão. O tenant recebe somente sua operação, sem o histórico de outros tenants, e só pode editar nome e duas cores. Admin gerencia tenants do próprio workspace. A marca pública retorna apenas campos públicos para um UUID explícito. O protótipo usa armazenamento local por tenant; a prévia transmite alterações temporárias sem salvar.
+O servidor obtém a operação pela sessão. O tenant recebe somente sua operação, sem o histórico de outros tenants, e só pode editar nome e cor da marca. Admin gerencia tenants do próprio workspace. A marca pública retorna apenas campos públicos para um UUID explícito. O protótipo usa armazenamento local por tenant; a prévia transmite alterações temporárias sem salvar.
 
 Checkout, personalização de login e backup legado estão fora desta versão. O protótipo financeiro continua simulado: conexão com corretoras, saldo e ordens não são integrações reais.
 
 ## Verificação após deploy
 
 Abra /login; entre e atualize /platform diretamente; salve nome/cores; abra /prototipo/app?tenant=UUID e atualize a página; teste dois tenants e o acesso negado a outro UUID. Confira que /pagina-inexistente e um asset ausente retornam 404. Confirme as variáveis antes de liberar clientes.
+
+## Simplificação da amostra
+
+Acessos: tenant@gmail.com / tenant123 e admin@gmail.com / admin123. O login tem atalhos para preencher cada perfil. O seletor global de demonstração foi removido. A navegação interna preserva o painel, a URL e o histórico do navegador sem tela intermediária de carregamento. O topo mostra Meu perfil; o sidebar não exibe nome/e-mail da conta. Plataforma permite nome e uma cor de marca; os controles de operação mantêm verde fixo. A troca Demo/Real usa um botão D/Real ao lado do saldo, com dados simulados. Configurações permite alterar e-mail e senha; a atualização do e-mail é transacional e mantém o vínculo do tenant. Checkout e tokens de pagamento seguem fora desta versão.
+
+A plataforma nasce junto com o tenant. O formulário Plataforma permite domínio, logo, nome e cor. O domínio é apenas salvo nesta amostra: não configura DNS, não prova posse e não ativa roteamento por host. A logo enviada substitui a marca no cabeçalho e no acesso do protótipo. Uploads são vinculados ao tenant.

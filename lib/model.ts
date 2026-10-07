@@ -271,7 +271,7 @@ export function mockActivities(): { id: string; text: string; time: string }[] {
 export function initialState(email: string): State {
   const t: Tenant = {
     id: crypto.randomUUID(),
-    name: 'TradingPro',
+    name: 'Gotrade',
     slug: 'tradingpro',
     admin: 'Administrador',
     email,

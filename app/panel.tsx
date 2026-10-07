@@ -14,6 +14,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  UserRound,
   Users,
   Zap,
 } from 'lucide-react';
@@ -97,6 +98,18 @@ export default function Panel({
     document.title = tenant ? `${tenant.name} | Gotrade` : 'Gotrade';
   }, [tenant, admin]);
 
+  useEffect(() => {
+    const restore = () => {
+      const params = new URLSearchParams(location.search);
+      setSelectedId(params.get('tenant') || '');
+      const section = params.get('section') || location.pathname.slice(1);
+      setView(sections.some((s) => s.id === section) ? section : 'connections');
+      setNotice('');
+      setError('');
+    };
+    window.addEventListener('popstate', restore);
+    return () => window.removeEventListener('popstate', restore);
+  }, []);
   async function save(action: string, value: unknown): Promise<boolean> {
     if (!session || busy) return false;
     setBusy(true);
@@ -159,7 +172,9 @@ export default function Panel({
         : next === 'settings'
           ? '/settings'
           : '/tenants';
-      window.history.replaceState(null, '', target);
+      window.history.pushState(null, '', target);
+    } else {
+      window.history.pushState(null, '', `/${next}`);
     }
   }
   function openTenant(t: Tenant) {
@@ -271,6 +286,18 @@ export default function Panel({
                 <Link
                   key={id}
                   href={href}
+                  onClick={(e) => {
+                    if (
+                      e.button === 0 &&
+                      !e.metaKey &&
+                      !e.ctrlKey &&
+                      !e.shiftKey &&
+                      !e.altKey
+                    ) {
+                      e.preventDefault();
+                      navigate(id);
+                    }
+                  }}
                   className={view === id ? 'active' : ''}
                   aria-current={view === id ? 'page' : undefined}
                 >
@@ -282,15 +309,6 @@ export default function Panel({
           )}
         </nav>
         <div className="gt-sidebar-bottom">
-          <div className="gt-account">
-            <ShieldCheck size={18} />
-            <div>
-              <strong>
-                {admin ? 'Administrador' : tenant?.admin || 'Minha conta'}
-              </strong>
-              <small>{session.email}</small>
-            </div>
-          </div>
           <button
             className="gt-back"
             disabled={busy}
@@ -303,14 +321,15 @@ export default function Panel({
       </aside>
       <div className="gt-body">
         <header className="gt-topbar">
-          <span>
-            {managing
-              ? `Tenants / ${tenant.name}`
-              : admin
-                ? 'Administração'
-                : tenant?.name || 'Meu espaço'}
-          </span>
-          <span className="gt-role">{admin ? 'Admin' : 'Tenant'}</span>
+          {managing ? <span>Tenants / {tenant.name}</span> : <span />}
+          <button
+            className="gt-profile"
+            onClick={() => navigate('settings')}
+            aria-label="Meu perfil"
+          >
+            <UserRound size={18} />
+            <span>Meu perfil</span>
+          </button>
         </header>
         <main className="gt-main">
           <div className="gt-page-heading">
@@ -435,9 +454,8 @@ export default function Panel({
               <div className="gt-info">
                 <Plug size={20} />
                 <p>
-                  As integrações abaixo indicam os acessos liberados pelo
-                  administrador. A conexão de contas e a execução de ordens
-                  dependem da integração com cada corretora.
+                  Veja suas corretoras disponíveis. Nesta amostra, as contas e
+                  operações são simuladas.
                 </p>
               </div>
               <div className="gt-connection-grid">
@@ -488,9 +506,19 @@ export default function Panel({
                             <ShieldCheck size={16} />
                           )}
                           {enabled
-                            ? 'Acesso liberado'
+                            ? 'Pronta para usar'
                             : 'Solicite acesso ao administrador'}
                         </div>
+                      )}
+                      {!admin && enabled && (
+                        <a
+                          className="gt-button"
+                          href={`/prototipo/app?tenant=${tenant.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Abrir plataforma <ArrowUpRight size={16} />
+                        </a>
                       )}
                     </article>
                   );
@@ -518,7 +546,7 @@ export default function Panel({
                   onSave={(value) => save('tenant', value)}
                 />
               ) : (
-                <AccountSettings email={session.email} admin={!!admin} />
+                <AccountSettings email={session.email} onSaved={load} />
               )}
             </>
           )}
@@ -665,19 +693,23 @@ function PlatformEditor({
     name: string;
     color: string;
     secondaryColor: string;
+    domain?: string;
+    logo?: string;
   }) => Promise<boolean>;
 }) {
   const [name, setName] = useState(tenant.name);
   const [color, setColor] = useState(tenant.color);
-  const [secondaryColor, setSecondaryColor] = useState(
-    tenant.secondaryColor || '#ffffff',
-  );
+  const secondaryColor = tenant.secondaryColor || '#ffffff';
   const [error, setError] = useState('');
+  const [domain, setDomain] = useState(tenant.domain || '');
+  const [logo, setLogo] = useState(tenant.logo || '');
+  const [uploading, setUploading] = useState(false);
   const dirty =
     name !== tenant.name ||
     color !== tenant.color ||
-    secondaryColor !== (tenant.secondaryColor || '#ffffff');
-  const brand = { name, color, secondaryColor };
+    domain !== (tenant.domain || '') ||
+    logo !== (tenant.logo || '');
+  const brand = { name, color, secondaryColor, domain, logo };
   return (
     <div className="gt-platform-grid">
       <section className="gt-card gt-editor">
@@ -691,13 +723,84 @@ function PlatformEditor({
               if (await onSave(value)) {
                 setName(value.name);
                 setColor(value.color);
-                setSecondaryColor(value.secondaryColor);
+                setDomain(value.domain || '');
               }
             } catch (err) {
               setError((err as Error).message);
             }
           }}
         >
+          <h2>Sua plataforma</h2>
+          <p className="gt-muted">
+            Sua plataforma já está pronta. Personalize abaixo.
+          </p>
+          <label>
+            Domínio
+            <input
+              placeholder="plataforma.com.br"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              maxLength={253}
+            />
+          </label>
+          <p className="gt-muted">
+            O domínio ficará salvo. A conexão com a hospedagem ainda não está
+            disponível nesta amostra.
+          </p>
+          <label>
+            Logo
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              disabled={uploading || busy}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploading(true);
+                setError('');
+                try {
+                  const form = new FormData();
+                  form.set('file', file);
+                  form.set('tenantId', tenant.id);
+                  const response = await fetch('/api/media', {
+                    method: 'POST',
+                    body: form,
+                  });
+                  const data = await response.json();
+                  if (!response.ok)
+                    throw Error(
+                      data.error || 'Não foi possível enviar a logo.',
+                    );
+                  setLogo(data.url);
+                } catch (err) {
+                  setError((err as Error).message);
+                } finally {
+                  setUploading(false);
+                  e.target.value = '';
+                }
+              }}
+            />
+          </label>
+          <small className="gt-muted">
+            PNG, JPG ou WebP, até 400 KB. Prefira uma logo horizontal.
+          </small>
+          {uploading && <output>Enviando logo…</output>}
+          {logo && (
+            <div>
+              <img
+                src={logo}
+                alt="Logo da plataforma"
+                style={{ maxWidth: 200, maxHeight: 60, objectFit: 'contain' }}
+              />
+              <button
+                type="button"
+                className="gt-back"
+                onClick={() => setLogo('')}
+              >
+                Remover logo
+              </button>
+            </div>
+          )}
           <label>
             Nome da plataforma
             <input
@@ -709,17 +812,15 @@ function PlatformEditor({
             />
           </label>
           <ColorField label="Cor principal" value={color} onChange={setColor} />
-          <ColorField
-            label="Cor secundária"
-            value={secondaryColor}
-            onChange={setSecondaryColor}
-          />
           {error && (
             <p role="alert" className="gt-form-error">
               {error}
             </p>
           )}
-          <button className="gt-button gt-primary" disabled={busy || !dirty}>
+          <button
+            className="gt-button gt-primary"
+            disabled={busy || uploading || !dirty}
+          >
             {busy ? 'Salvando…' : 'Salvar alterações'}
           </button>
           {tenant.status === 'active' && (
@@ -816,17 +917,22 @@ function TenantAccess({
   );
 }
 
-function AccountSettings({ email, admin }: { email: string; admin: boolean }) {
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+function AccountSettings({
+  email,
+  onSaved,
+}: {
+  email: string;
+  onSaved: () => Promise<void>;
+}) {
+  const [nextEmail, setEmail] = useState(email),
+    [password, setPassword] = useState(''),
+    [confirm, setConfirm] = useState(''),
+    [busy, setBusy] = useState(false),
+    [message, setMessage] = useState(''),
+    [error, setError] = useState('');
   return (
     <section className="gt-card gt-editor gt-account-settings">
       <h2>Minha conta</h2>
-      <p className="gt-muted">{email}</p>
-      <span className="gt-status">{admin ? 'Administrador' : 'Tenant'}</span>
       <form
         className="gt-form"
         onSubmit={async (e) => {
@@ -842,14 +948,18 @@ function AccountSettings({ email, admin }: { email: string; admin: boolean }) {
             const response = await fetch('/api/auth/profile', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ newPassword: password }),
+              body: JSON.stringify({
+                email: nextEmail,
+                newPassword: password || undefined,
+              }),
             });
             const data = await response.json();
             if (!response.ok)
-              throw Error(data.error || 'Não foi possível alterar a senha.');
+              throw Error(data.error || 'Não foi possível salvar.');
             setPassword('');
             setConfirm('');
-            setMessage('Senha atualizada.');
+            await onSaved();
+            setMessage('Dados atualizados.');
           } catch (err) {
             setError((err as Error).message);
           } finally {
@@ -857,14 +967,24 @@ function AccountSettings({ email, admin }: { email: string; admin: boolean }) {
           }
         }}
       >
+        <label>
+          E-mail
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            value={nextEmail}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </label>
         <h3>Alterar senha</h3>
+        <p className="gt-muted">Preencha apenas para trocar sua senha.</p>
         <label>
           Nova senha
           <input
             type="password"
             autoComplete="new-password"
-            required
-            minLength={12}
+            minLength={8}
             maxLength={128}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -875,8 +995,6 @@ function AccountSettings({ email, admin }: { email: string; admin: boolean }) {
           <input
             type="password"
             autoComplete="new-password"
-            required
-            minLength={12}
             maxLength={128}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
@@ -889,7 +1007,7 @@ function AccountSettings({ email, admin }: { email: string; admin: boolean }) {
         )}
         {message && <output>{message}</output>}
         <button className="gt-button gt-primary" disabled={busy}>
-          {busy ? 'Salvando…' : 'Atualizar senha'}
+          {busy ? 'Salvando…' : 'Salvar alterações'}
         </button>
       </form>
     </section>

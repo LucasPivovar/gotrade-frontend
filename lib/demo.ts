@@ -4,12 +4,12 @@ export const demoEnabled = () => process.env.DEMO_MODE === 'true';
 export const demoAccounts = [
   {
     id: 'demo-admin',
-    email: 'admin@tradingpro.io',
-    password: 'DemoAdmin2026!',
+    email: 'admin@gmail.com',
+    password: 'admin123',
   },
   {
     id: 'demo-tenant',
-    email: 'tenant@tradingpro.io',
-    password: 'DemoTenant2026!',
+    email: 'tenant@gmail.com',
+    password: 'tenant123',
   },
 ];

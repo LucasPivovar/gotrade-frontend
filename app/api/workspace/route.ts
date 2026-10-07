@@ -64,6 +64,23 @@ export async function POST(request: Request) {
       if (!old || (w.role === 'tenant' && old.id !== w.tenantId))
         throw Error('FORBIDDEN');
       const updated = updateApplication(old, body.value);
+      if (updated.logo && updated.logo !== old.logo) {
+        const media = await database()
+          .prepare('SELECT owner FROM media WHERE id=?')
+          .bind(updated.logo.split('/').pop()!)
+          .first<{ owner: string }>();
+        if (media?.owner !== old.id) throw Error('FORBIDDEN');
+      }
+      if (updated.domain && updated.domain !== old.domain) {
+        const duplicate = await database()
+          .prepare(
+            "SELECT owner FROM workspaces WHERE EXISTS (SELECT 1 FROM json_each(json_extract(data,'$.tenants')) WHERE lower(json_extract(value,'$.domain'))=? AND json_extract(value,'$.id')!=?)",
+          )
+          .bind(updated.domain, old.id)
+          .first();
+        if (duplicate)
+          throw Error('Este domínio já está associado a outra plataforma.');
+      }
       s.tenants = s.tenants.map((t) => (t.id === old.id ? updated : t));
       event = `Atualizou a plataforma ${updated.name}`;
     } else if (body.action === 'tenant') {
