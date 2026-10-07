@@ -253,7 +253,7 @@ export default function Panel({
         )}
         {managing && (
           <button
-            className="gt-signout"
+            className="gt-back"
             onClick={() => {
               setSelectedId('');
               navigate('connections', '');
@@ -320,7 +320,7 @@ export default function Panel({
         </nav>
         <div className="gt-sidebar-bottom">
           <button
-            className="gt-back"
+            className="gt-signout"
             disabled={busy}
             onClick={() => void logout()}
           >
