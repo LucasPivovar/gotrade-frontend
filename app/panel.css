@@ -1,10 +1,10 @@
 :root,
 .dark {
-  --brand-accent: #69b58b;
+  --brand-accent: #70c99a;
   --brand-complement: #bed9c9;
   --brand-secondary: #bed9c9;
-  --brand-hover: #2f8c59;
-  --brand-on-hover: #ffffff;
+  --brand-hover: #66c794;
+  --brand-on-hover: #071b11;
   --brand-font: Inter, system-ui, sans-serif;
   --background: #191919;
   --foreground: #eef2ec;
@@ -12,8 +12,8 @@
   --card-foreground: #eef2ec;
   --popover: #242524;
   --popover-foreground: #eef2ec;
-  --primary: #237a4b;
-  --primary-foreground: #ffffff;
+  --primary: #4fbb83;
+  --primary-foreground: #071b11;
   --secondary: #292b28;
   --secondary-foreground: #eef2ec;
   --muted: #292b28;
@@ -23,15 +23,15 @@
   --destructive: #fb7185;
   --border: #ffffff14;
   --input: #383c34;
-  --ring: #237a4b;
+  --ring: #4fbb83;
   --sidebar: #131513;
   --sidebar-foreground: #b3b8b1;
-  --sidebar-primary: #237a4b;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #237a4b12;
-  --sidebar-accent-foreground: #69b58b;
+  --sidebar-primary: #4fbb83;
+  --sidebar-primary-foreground: #071b11;
+  --sidebar-accent: #4fbb8312;
+  --sidebar-accent-foreground: #70c99a;
   --sidebar-border: #ffffff12;
-  --sidebar-ring: #237a4b;
+  --sidebar-ring: #4fbb83;
   --radius: 6px;
 }
 * {
@@ -2201,7 +2201,7 @@ html {
 }
 .purchase {
   color: var(--muted-foreground);
-  --checkout-color: #237a4b;
+  --checkout-color: #4fbb83;
   padding: 24px 28px;
   font-family: var(--brand-font, Inter), sans-serif;
 }

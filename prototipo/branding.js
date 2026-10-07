@@ -5,7 +5,7 @@
   window.__GOTRADE_PREVIEW__ = preview;
   let previewBrand = null;
   const fetchBrand = window.fetch.bind(window);
-  let currentBranding = { id: tenantId || 'default', name: 'Gotrade', color: '#237a4b', secondaryColor: '#ffffff', logo: '', favicon: '', font: 'Inter', loginTemplate: 'split' };
+  let currentBranding = { id: tenantId || 'default', name: 'Gotrade', color: '#4fbb83', secondaryColor: '#ffffff', logo: '', favicon: '', font: 'Inter', loginTemplate: 'split' };
   let initialized = false;
   function isSameBranding(a, b) {
     return ['name', 'color', 'secondaryColor', 'logo', 'favicon', 'font', 'darkMode', 'loginTemplate'].every((key) => a[key] === b[key]);
@@ -99,7 +99,7 @@
     });
   }
   const gateStyle = document.createElement('style');
-  gateStyle.textContent = 'html[data-brand-loading] #root,html[data-brand-error] #root{display:none!important}#gotrade-brand-status{position:fixed;inset:0;z-index:99999;background:#191919;color:#e8ece5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center;font:14px Inter,system-ui,sans-serif}#gotrade-brand-status button{padding:12px 18px;background:#237a4b;color:#151a0b;border:0;border-radius:8px;cursor:pointer}';
+  gateStyle.textContent = 'html[data-brand-loading] #root,html[data-brand-error] #root{display:none!important}#gotrade-brand-status{position:fixed;inset:0;z-index:99999;background:#191919;color:#e8ece5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center;font:14px Inter,system-ui,sans-serif}#gotrade-brand-status button{padding:12px 18px;background:#4fbb83;color:#151a0b;border:0;border-radius:8px;cursor:pointer}';
   document.head.appendChild(gateStyle);
   function status(message, failed = false) {
     const render = () => {

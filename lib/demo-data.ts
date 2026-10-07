@@ -1,14 +1,14 @@
 import type { State } from './model';
 import { createApplication } from './application';
 export function addDemoData(state: State) {
-  if (state.demoVersion === 2) return state;
+  if (state.demoVersion === 3) return state;
   const names = [
     'Aurora Trade',
     'Nexus Invest',
     'Atlas Capital',
     'Pulse Trading',
   ];
-  if (state.demoVersion !== 1)
+  if (!state.demoVersion)
     names.forEach((name, i) => {
       const t = createApplication(
         {
@@ -54,9 +54,13 @@ export function addDemoData(state: State) {
   const primary = state.tenants.find(
     (t) => t.id === '10000000-0000-4000-8000-000000000001',
   );
-  if (primary && ['TradingPro', 'Gotrade'].includes(primary.name)) {
+  if (
+    primary &&
+    ['TradingPro', 'Gotrade', 'GoTrade'].includes(primary.name) &&
+    ['#237a4b', '#96d600'].includes(primary.color.toLowerCase())
+  ) {
     primary.name = 'GoTrade';
-    primary.color = '#237a4b';
+    primary.color = '#4fbb83';
   }
   const sample = state.tenants.find(
     (t) => t.id === '10000000-0000-4000-8000-000000000002',
@@ -90,6 +94,6 @@ export function addDemoData(state: State) {
             ]
           : [],
       });
-  state.demoVersion = 2;
+  state.demoVersion = 3;
   return state;
 }

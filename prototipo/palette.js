@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.foreground = exports.contrast = exports.mix = void 0;
 exports.create = create;
 function rgb(color) {
-    let value = /^#[\da-f]{3}([\da-f]{3})?$/i.test(color || '') ? color.slice(1) : '96d600';
+    let value = /^#[\da-f]{3}([\da-f]{3})?$/i.test(color || '') ? color.slice(1) : '4fbb83';
     if (value.length === 3)
         value = value.split('').map((c) => c + c).join('');
     return [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16));

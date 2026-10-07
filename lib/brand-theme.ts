@@ -17,7 +17,7 @@ export const brandFonts = [
 export function brandThemeVariables(
   brand?: Pick<Tenant, 'color' | 'secondaryColor' | 'font'>,
 ) {
-  const p = create(brand?.color || '#237a4b', brand?.secondaryColor);
+  const p = create(brand?.color || '#4fbb83', brand?.secondaryColor);
   const font = brandFonts.includes(brand?.font || '') ? brand!.font : 'Inter';
   return {
     '--background': p.background,

@@ -306,7 +306,7 @@ export default function LoginForm({
 }) {
   const branding: Branding = {
     name: 'GoTrade',
-    color: '#237a4b',
+    color: '#4fbb83',
     logo: '/brand/gotrade-logo.svg',
     loginTemplate: 'split',
   };

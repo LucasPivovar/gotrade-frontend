@@ -33,12 +33,12 @@
   background:
     radial-gradient(
       circle at 15% 15%,
-      rgba(35, 122, 75, 0.06) 0%,
+      rgba(79, 187, 131, 0.06) 0%,
       transparent 65%
     ),
     radial-gradient(
       circle at 85% 85%,
-      rgba(35, 122, 75, 0.02) 0%,
+      rgba(79, 187, 131, 0.02) 0%,
       transparent 50%
     ),
     #111410;
@@ -72,10 +72,10 @@
   width: 38px;
   height: 38px;
   padding: 8px;
-  background: #237a4b;
+  background: #4fbb83;
   color: #121c08;
   border-radius: 10px;
-  box-shadow: 0 4px 14px rgba(35, 122, 75, 0.3);
+  box-shadow: 0 4px 14px rgba(79, 187, 131, 0.3);
 }
 
 .login-intro .brand .login-brand-name {
@@ -98,7 +98,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #237a4b;
+  color: #4fbb83;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -142,7 +142,7 @@
 }
 
 .feature-pill svg {
-  color: #237a4b;
+  color: #4fbb83;
 }
 
 .login-platform {
@@ -151,14 +151,14 @@
   gap: 14px;
   padding: 14px 18px;
   background: rgba(20, 26, 18, 0.8);
-  border: 1px solid rgba(35, 122, 75, 0.2);
+  border: 1px solid rgba(79, 187, 131, 0.2);
   border-radius: 12px;
   font-size: 12.5px;
   font-weight: 600;
 }
 
 .login-platform > svg {
-  color: #237a4b;
+  color: #4fbb83;
   flex-shrink: 0;
 }
 
@@ -186,8 +186,8 @@
 .login-split .login-symbol {
   width: 34px;
   height: 34px;
-  background: rgba(35, 122, 75, 0.14);
-  color: #237a4b;
+  background: rgba(79, 187, 131, 0.14);
+  color: #4fbb83;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
@@ -221,10 +221,10 @@
   padding: 12px 16px;
   background: linear-gradient(
     135deg,
-    rgba(35, 122, 75, 0.12) 0%,
+    rgba(79, 187, 131, 0.12) 0%,
     rgba(22, 30, 17, 0.9) 100%
   );
-  border: 1px solid rgba(35, 122, 75, 0.35);
+  border: 1px solid rgba(79, 187, 131, 0.35);
   border-radius: 10px;
   color: #e4f5cc;
   cursor: pointer;
@@ -235,11 +235,11 @@
 .quick-access-btn:hover {
   background: linear-gradient(
     135deg,
-    rgba(35, 122, 75, 0.18) 0%,
+    rgba(79, 187, 131, 0.18) 0%,
     rgba(30, 42, 23, 0.95) 100%
   );
-  border-color: rgba(35, 122, 75, 0.65);
-  box-shadow: 0 4px 20px rgba(35, 122, 75, 0.2);
+  border-color: rgba(79, 187, 131, 0.65);
+  box-shadow: 0 4px 20px rgba(79, 187, 131, 0.2);
   transform: translateY(-1px);
 }
 
@@ -255,7 +255,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: #237a4b;
+  background: #4fbb83;
   color: #121c08;
   border-radius: 8px;
   flex-shrink: 0;
@@ -331,8 +331,8 @@
 }
 
 .login-split .field input:focus {
-  border-color: #237a4b;
-  box-shadow: 0 0 0 3px rgba(35, 122, 75, 0.18);
+  border-color: #4fbb83;
+  box-shadow: 0 0 0 3px rgba(79, 187, 131, 0.18);
   outline: none;
 }
 
@@ -386,7 +386,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #237a4b;
+  background: #4fbb83;
   color: #101905;
   border: none;
   cursor: pointer;
@@ -395,7 +395,7 @@
 
 .login-split .primary:hover:not(:disabled) {
   background: #a9ee08;
-  box-shadow: 0 4px 16px rgba(35, 122, 75, 0.3);
+  box-shadow: 0 4px 16px rgba(79, 187, 131, 0.3);
   transform: translateY(-1px);
 }
 
@@ -416,9 +416,9 @@
 }
 
 .autofill-link {
-  background: rgba(35, 122, 75, 0.08);
-  border: 1px solid rgba(35, 122, 75, 0.2);
-  color: #237a4b;
+  background: rgba(79, 187, 131, 0.08);
+  border: 1px solid rgba(79, 187, 131, 0.2);
+  color: #4fbb83;
   border-radius: 12px;
   padding: 4px 10px;
   cursor: pointer;
@@ -428,8 +428,8 @@
 }
 
 .autofill-link:hover {
-  background: rgba(35, 122, 75, 0.18);
-  border-color: rgba(35, 122, 75, 0.4);
+  background: rgba(79, 187, 131, 0.18);
+  border-color: rgba(79, 187, 131, 0.4);
   color: #aff422;
 }
 
@@ -538,7 +538,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--brand-color, #237a4b);
+  background: var(--brand-color, #4fbb83);
   border-radius: 18px;
   box-shadow: 0 8px 24px var(--brand-shadow, rgba(150, 214, 0, 0.35));
 }
@@ -621,7 +621,7 @@ body:has(.login-hero) {
   background:
     radial-gradient(
       ellipse at 15% 25%,
-      var(--brand-color-alpha, rgba(35, 122, 75, 0.22)) 0%,
+      var(--brand-color-alpha, rgba(79, 187, 131, 0.22)) 0%,
       transparent 60%
     ),
     linear-gradient(135deg, #0d120d 0%, #080a08 100%);
@@ -634,8 +634,8 @@ body:has(.login-hero) {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    var(--brand-color, #237a4b) 0%,
-    rgba(35, 122, 75, 0.18) 45%,
+    var(--brand-color, #4fbb83) 0%,
+    rgba(79, 187, 131, 0.18) 45%,
     transparent 70%
   );
   opacity: 0.28;
@@ -654,7 +654,7 @@ body:has(.login-hero) {
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: radial-gradient(
     circle,
-    var(--brand-color-alpha, rgba(35, 122, 75, 0.1)) 0%,
+    var(--brand-color-alpha, rgba(79, 187, 131, 0.1)) 0%,
     transparent 70%
   );
   top: 50%;
@@ -683,9 +683,9 @@ body:has(.login-hero) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--brand-color, #237a4b);
+  background: var(--brand-color, #4fbb83);
   border-radius: 14px;
-  box-shadow: 0 8px 26px var(--brand-shadow, rgba(35, 122, 75, 0.35));
+  box-shadow: 0 8px 26px var(--brand-shadow, rgba(79, 187, 131, 0.35));
 }
 
 .login-hero .hero-brand .brand-icon img {
@@ -715,7 +715,7 @@ body:has(.login-hero) {
 }
 
 .login-hero .hero-copy h2 span {
-  color: var(--brand-color, #237a4b);
+  color: var(--brand-color, #4fbb83);
 }
 
 .login-hero .hero-copy p {
@@ -746,7 +746,7 @@ body:has(.login-hero) {
 }
 
 .login-hero .hero-pill svg {
-  color: var(--brand-color, #237a4b);
+  color: var(--brand-color, #4fbb83);
 }
 
 .login-hero .login-hero-panel {
@@ -779,8 +779,8 @@ body:has(.login-hero) {
 .login-hero .login-hero-panel .login-symbol {
   width: 32px;
   height: 32px;
-  background: var(--brand-color-alpha, rgba(35, 122, 75, 0.16));
-  color: var(--brand-color, #237a4b);
+  background: var(--brand-color-alpha, rgba(79, 187, 131, 0.16));
+  color: var(--brand-color, #4fbb83);
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
@@ -897,8 +897,8 @@ body:has(.login-hero) {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    var(--brand-color, #237a4b) 0%,
-    rgba(35, 122, 75, 0.15) 50%,
+    var(--brand-color, #4fbb83) 0%,
+    rgba(79, 187, 131, 0.15) 50%,
     transparent 70%
   );
   opacity: 0.28;
@@ -915,8 +915,8 @@ body:has(.login-hero) {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    var(--brand-color, #237a4b) 0%,
-    rgba(35, 122, 75, 0.12) 40%,
+    var(--brand-color, #4fbb83) 0%,
+    rgba(79, 187, 131, 0.12) 40%,
     transparent 70%
   );
   opacity: 0.22;
@@ -977,12 +977,12 @@ body:has(.login-hero) {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background: var(--brand-color, #237a4b);
+  background: var(--brand-color, #4fbb83);
   color: #0a0c0a;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px var(--brand-shadow, rgba(35, 122, 75, 0.35));
+  box-shadow: 0 8px 24px var(--brand-shadow, rgba(79, 187, 131, 0.35));
   margin-bottom: 12px;
 }
 
@@ -1037,9 +1037,9 @@ body:has(.login-hero) {
 
 .login-glassmorphism .field input:focus,
 .login-glassmorphism .password-field input:focus {
-  border-color: var(--brand-color, #237a4b);
+  border-color: var(--brand-color, #4fbb83);
   background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 0 3px var(--brand-color-alpha, rgba(35, 122, 75, 0.2));
+  box-shadow: 0 0 0 3px var(--brand-color-alpha, rgba(79, 187, 131, 0.2));
 }
 
 /* ==========================================================================
@@ -1075,13 +1075,13 @@ body:has(.login-hero) {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--brand-color, #237a4b);
+  background: var(--brand-color, #4fbb83);
   color: #070906;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  box-shadow: 0 4px 16px var(--brand-shadow, rgba(35, 122, 75, 0.3));
+  box-shadow: 0 4px 16px var(--brand-shadow, rgba(79, 187, 131, 0.3));
 }
 
 .login-minimal .minimal-brand-mark img {
@@ -1177,5 +1177,5 @@ body:has(.login-hero) {
   color: #a6aca2;
 }
 .sample-accesses button:hover {
-  border-color: #237a4b;
+  border-color: #4fbb83;
 }

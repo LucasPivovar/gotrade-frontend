@@ -355,7 +355,7 @@ export function initialState(email: string): State {
     slug: 'gotrade',
     admin: 'Administrador',
     email,
-    color: '#237a4b',
+    color: '#4fbb83',
     logo: '',
     status: 'active',
     domain: '',

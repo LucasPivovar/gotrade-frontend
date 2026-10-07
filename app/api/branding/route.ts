@@ -12,7 +12,7 @@ export async function GET(request: Request) {
       {
         id: 'default',
         name: 'GoTrade',
-        color: '#237a4b',
+        color: '#4fbb83',
         secondaryColor: '#ffffff',
         font: 'Inter',
         logo: '/brand/gotrade-logo.svg',
