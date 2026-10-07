@@ -19,6 +19,7 @@ export function patchBundleFile(targetPath) {
   if (!existsSync(targetPath)) return false;
   let code = readFileSync(targetPath, 'utf-8');
   const before = code;
+  code = code.replace('return a.jsxs("div",{children:[a.jsxs("div",{className:"topbar-market"', 'return a.jsxs("div",{className:"gotrade-trading-area",children:[a.jsxs("div",{className:"topbar-market"');
   code = code.replace('Ih="tradingpro_token"','Ih="gotrade_prototype_token_"+(new URLSearchParams(location.search).get("tenant")||"default")');
   // Embedded previews use the existing mock user without writing a login token.
   code = code.replace('if(!Ln()){i(!1);return}D.me()', 'if(!Ln()&&!window.__GOTRADE_PREVIEW__){i(!1);return}D.me()');
