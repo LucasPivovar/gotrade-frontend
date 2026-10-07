@@ -34,6 +34,11 @@
     style.textContent = `
       .topbar-market-right{display:flex;align-items:center;gap:12px}.gotrade-account-toggle button{min-width:36px;height:34px;border:1px solid #ffffff26;border-radius:9px;background:#ffffff08;color:#c5d0c1;font-weight:700;cursor:pointer}.gotrade-account-toggle button:disabled{opacity:.5;cursor:not-allowed}.gotrade-account-toggle [role=alert]{font-size:11px;max-width:160px}
       .gotrade-trading-area{--lime:var(--brand-accent);--lime-dim:var(--brand-hover)}
+      .gotrade-protection-steps{margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--brand-subtle);color:var(--text);font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+      .gotrade-cycle-summary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;margin-top:12px;font-size:12px;line-height:1.5;align-items:center}
+      .gotrade-cycle-summary>.neg{font-size:14px;font-variant-numeric:tabular-nums}
+      .gotrade-cycle-profit{grid-column:1/-1;padding-top:8px;border-top:1px solid var(--border);color:var(--positive);font-variant-numeric:tabular-nums}
+      .gotrade-cycle-note{margin-top:12px;padding:10px 12px;border-left:2px solid var(--brand-accent);border-radius:0 6px 6px 0;background:var(--brand-subtle);color:var(--muted);font-size:12px;line-height:1.65}
       .topbar-stat-item .mono{color:var(--positive)!important}
       .gotrade-trading-area button[style*="var(--lime)"],.gotrade-trading-area button[style*="var(--brand-accent)"]{background:var(--brand-subtle)!important;border:1px solid color-mix(in srgb,var(--brand-accent) 40%,transparent)!important;color:var(--brand-accent)!important}
       .btn-lime,.hero-primary,.tour-button{background:var(--brand-primary)!important;color:var(--brand-on-primary)!important}
