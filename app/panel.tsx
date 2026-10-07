@@ -28,6 +28,7 @@ import {
 import AccountInvite from '@/components/account-invite';
 import PlatformPreview from '@/components/platform-preview';
 import LogoEditor from '@/components/logo-editor';
+import AdminOverview from '@/components/admin-overview';
 import { providers, type Session, type Tenant } from '@/lib/model';
 import { createApplication, validateApplicationBrand } from '@/lib/application';
 import { applyBrandTheme } from '@/lib/brand-theme';
@@ -420,6 +421,15 @@ export default function Panel({
                   </button>
                 ))}
               </div>
+              <AdminOverview
+                tenants={tenants}
+                onOpen={openTenant}
+                onConnections={(t) => {
+                  setSelectedId(t.id);
+                  navigate('connections', t.id);
+                }}
+                onCreate={() => setCreating(true)}
+              />
               <div className="gt-list-toolbar">
                 <span>
                   {session.state.tenants.length} tenants{' '}
