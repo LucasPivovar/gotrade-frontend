@@ -241,18 +241,6 @@ function TemplateSplit({
     <main className="login-page login-split">
       <section className="login-intro" aria-label={branding.name}>
         <Link href="/login" className="brand">
-          {branding.logo ? (
-            <img
-              src={branding.logo}
-              alt={branding.name}
-              style={{
-                height: 38,
-                width: 38,
-                objectFit: 'contain',
-                borderRadius: 10,
-              }}
-            />
-          ) : null}
           <span className="login-brand-name">{branding.name}</span>
         </Link>
         <div className="login-intro-copy">
