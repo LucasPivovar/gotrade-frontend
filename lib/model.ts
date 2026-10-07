@@ -20,6 +20,9 @@ export type LoginTemplate =
   | 'minimal';
 
 export type Tenant = {
+  checkoutPriceCents?: number;
+  webhook?: string;
+  clientCount?: number;
   id: string;
   name: string;
   slug: string;
@@ -142,6 +145,8 @@ export const availableBots: TradingBotDefinition[] = [
 ];
 
 export type PlatformSettings = {
+  tenantPriceCents?: number;
+  telegramUrl?: string;
   enabledProviders?: string[];
   supportEmail?: string;
   defaultPlan?: string;
@@ -168,12 +173,29 @@ export const defaultPlatformSettings: PlatformSettings = {
 };
 
 export type State = {
+  tickets?: SupportTicket[];
+  purchaseLinks?: PurchaseLink[];
   demoVersion?: number;
   billing?: BillingRecord[];
   tenants: Tenant[];
   checkouts: Checkout[];
   activity: { id: string; text: string; time: string }[];
   settings?: PlatformSettings;
+};
+export type PurchaseLink = { id: string; amountCents: number; created: string };
+export type SupportTicket = {
+  id: string;
+  tenantId: string;
+  subject: string;
+  message: string;
+  created: string;
+  status: 'open' | 'answered' | 'closed';
+  replies: {
+    id: string;
+    message: string;
+    created: string;
+    emailStatus: 'pending' | 'sent' | 'failed';
+  }[];
 };
 export type BillingRecord = {
   id: string;
@@ -329,11 +351,11 @@ export function mockActivities(): { id: string; text: string; time: string }[] {
 export function initialState(email: string): State {
   const t: Tenant = {
     id: crypto.randomUUID(),
-    name: 'Gotrade',
-    slug: 'tradingpro',
+    name: 'GoTrade',
+    slug: 'gotrade',
     admin: 'Administrador',
     email,
-    color: '#96d600',
+    color: '#237a4b',
     logo: '',
     status: 'active',
     domain: '',

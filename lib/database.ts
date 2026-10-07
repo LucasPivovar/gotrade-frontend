@@ -50,7 +50,7 @@ export async function initialize() {
         );
         if (existing.rows.length) {
           const state = JSON.parse(String(existing.rows[0].data));
-          if (state.demoVersion !== 1)
+          if (state.demoVersion !== 2)
             await db.execute({
               sql: "UPDATE workspaces SET data=?,revision=revision+1 WHERE owner='demo-admin'",
               args: [JSON.stringify(addDemoData(state))],

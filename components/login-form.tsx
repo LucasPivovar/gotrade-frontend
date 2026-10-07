@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import '@/app/login.css';
-import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
   ArrowUpRight,
@@ -22,7 +21,6 @@ interface Branding {
 
 // ── Shared form logic ──────────────────────────────────────────────────────
 function useLoginForm(invite?: string) {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [visible, setVisible] = useState(false);
@@ -30,13 +28,19 @@ function useLoginForm(invite?: string) {
   const [error, setError] = useState('');
 
   function getTarget() {
-    if (typeof window === 'undefined') return '/connections';
+    if (typeof window === 'undefined') return '/platform';
     const params = new URLSearchParams(window.location.search);
     const target = params.get('redirect');
     return target &&
-      ['/connections', '/platform', '/settings', '/tenants'].includes(target)
+      [
+        '/connections',
+        '/platform',
+        '/settings',
+        '/support',
+        '/tenants',
+      ].includes(target)
       ? target
-      : '/connections';
+      : '/platform';
   }
 
   async function submit(_demo: boolean) {
@@ -53,16 +57,20 @@ function useLoginForm(invite?: string) {
       });
       const data = (await r.json()) as { error?: string };
       if (!r.ok) throw Error(data.error);
-      if (data && 'role' in data) {
-        window.location.assign(
-          (data as { role?: string }).role === 'admin'
-            ? '/tenants'
-            : '/connections',
-        );
-        return;
-      }
-      router.replace(target);
-      router.refresh();
+      const session = await fetch('/api/workspace', { cache: 'no-store' });
+      const account = (await session.json()) as {
+        role?: string;
+        error?: string;
+      };
+      if (!session.ok)
+        throw Error(account.error || 'Não foi possível abrir sua conta.');
+      const admin = account.role === 'admin';
+      const allowed = admin
+        ? ['/tenants', '/settings', '/support']
+        : ['/platform', '/connections', '/settings', '/support'];
+      window.location.assign(
+        allowed.includes(target) ? target : admin ? '/tenants' : '/platform',
+      );
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -309,9 +317,9 @@ export default function LoginForm({
   demo?: boolean;
 }) {
   const branding: Branding = {
-    name: 'Gotrade',
-    color: '#96d600',
-    logo: '',
+    name: 'GoTrade',
+    color: '#237a4b',
+    logo: '/brand/gotrade-logo.svg',
     loginTemplate: 'split',
   };
   return <TemplateSplit invite={invite} demo={demo} branding={branding} />;

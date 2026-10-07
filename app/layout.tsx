@@ -4,7 +4,8 @@ import './panel.css';
 import './gotrade.css';
 
 export const metadata: Metadata = {
-  title: 'Gotrade',
+  title: 'GoTrade',
+  icons: { icon: '/brand/gotrade-icon.png', apple: '/brand/gotrade-icon.png' },
   description: 'Suas conexões e sua plataforma em um só lugar.',
 };
 export default function RootLayout({

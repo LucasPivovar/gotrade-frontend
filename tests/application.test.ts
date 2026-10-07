@@ -75,3 +75,34 @@ void test('invalid branding is rejected and public branding has no private data'
   for (const key of ['email', 'admin', 'users', 'connections', 'allowedBots'])
     assert.equal(key in brand, false);
 });
+
+void test('checkout preference validates amount, webhook and public data boundary', () => {
+  const tenant = createApplication({ name: 'Valor', color: '#237a4b' }, []);
+  const updated = updateApplication(tenant, {
+    name: tenant.name,
+    color: tenant.color,
+    checkoutPriceCents: 300000,
+    webhook: 'https://example.com/hook',
+  });
+  assert.equal(updated.checkoutPriceCents, 300000);
+  assert.equal(updated.webhook, 'https://example.com/hook');
+  for (const checkoutPriceCents of [0, -1, 1.5, NaN, 100000001])
+    assert.throws(() =>
+      validateApplicationBrand({
+        name: 'Valor',
+        color: '#237a4b',
+        checkoutPriceCents,
+      }),
+    );
+  for (const webhook of [
+    'javascript:alert(1)',
+    'http://example.com',
+    'https://user:password@example.com',
+    42,
+  ])
+    assert.throws(() =>
+      validateApplicationBrand({ name: 'Valor', color: '#237a4b', webhook }),
+    );
+  assert.equal('webhook' in publicBranding(updated), false);
+  assert.equal('checkoutPriceCents' in publicBranding(updated), false);
+});

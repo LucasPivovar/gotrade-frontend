@@ -5,7 +5,7 @@
   window.__GOTRADE_PREVIEW__ = preview;
   let previewBrand = null;
   const fetchBrand = window.fetch.bind(window);
-  let currentBranding = { id: tenantId || 'default', name: 'Gotrade', color: '#96d600', secondaryColor: '#ffffff', logo: '', favicon: '', font: 'Inter', loginTemplate: 'split' };
+  let currentBranding = { id: tenantId || 'default', name: 'Gotrade', color: '#237a4b', secondaryColor: '#ffffff', logo: '', favicon: '', font: 'Inter', loginTemplate: 'split' };
   let initialized = false;
   function isSameBranding(a, b) {
     return ['name', 'color', 'secondaryColor', 'logo', 'favicon', 'font', 'darkMode', 'loginTemplate'].every((key) => a[key] === b[key]);
@@ -59,7 +59,7 @@
   let lastAppliedFavicon = '';
   function updateFavicons(branding) {
     const palette = window.TradingProPalette.create(branding.color);
-    const iconUrl = branding.favicon || branding.logo || 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="${palette.primary}"/><path d="m6 21 7-7 5 4 8-9" fill="none" stroke="${palette.onPrimary}" stroke-width="3"/></svg>`);
+    const iconUrl = branding.favicon || branding.logo || '/brand/gotrade-icon.png';
     if (iconUrl === lastAppliedFavicon) return;
     lastAppliedFavicon = iconUrl;
     document.querySelectorAll('link[rel="icon"],link[rel="apple-touch-icon"]').forEach((element) => element.remove());
@@ -99,7 +99,7 @@
     });
   }
   const gateStyle = document.createElement('style');
-  gateStyle.textContent = 'html[data-brand-loading] #root,html[data-brand-error] #root{display:none!important}#gotrade-brand-status{position:fixed;inset:0;z-index:99999;background:#191919;color:#e8ece5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center;font:14px Inter,system-ui,sans-serif}#gotrade-brand-status button{padding:12px 18px;background:#96d600;color:#151a0b;border:0;border-radius:8px;cursor:pointer}';
+  gateStyle.textContent = 'html[data-brand-loading] #root,html[data-brand-error] #root{display:none!important}#gotrade-brand-status{position:fixed;inset:0;z-index:99999;background:#191919;color:#e8ece5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center;font:14px Inter,system-ui,sans-serif}#gotrade-brand-status button{padding:12px 18px;background:#237a4b;color:#151a0b;border:0;border-radius:8px;cursor:pointer}';
   document.head.appendChild(gateStyle);
   function status(message, failed = false) {
     const render = () => {

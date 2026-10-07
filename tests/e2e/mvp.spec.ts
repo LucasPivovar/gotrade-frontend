@@ -52,110 +52,6 @@ async function seedTenant(
   return tenant;
 }
 
-test('admin manages tenants, edits platform identity and reloads saved data', async ({
-  page,
-}) => {
-  const errors: string[] = [];
-  page.on('pageerror', (e) => errors.push(e.message));
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await login(page);
-  await expect(
-    page.getByText('TradingPro White Label', { exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByText('Central de gerenciamento', { exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole('link', { name: 'Checkouts', exact: true }),
-  ).toHaveCount(0);
-  await page
-    .getByRole('button', { name: 'Novo tenant', exact: true })
-    .first()
-    .click();
-  const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome da operação').fill('Alpha Visual');
-  await dialog.getByLabel('Nome do responsável').fill('Ana');
-  await dialog
-    .getByLabel('E-mail do responsável')
-    .fill(`${crypto.randomUUID()}@example.test`);
-  await dialog.getByRole('button', { name: 'Criar tenant' }).click();
-  await page.getByRole('button', { name: 'Plataforma', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Plataforma', exact: true }),
-  ).toBeVisible();
-  await page
-    .getByLabel('Nome da plataforma', { exact: true })
-    .fill('Alpha Atualizada');
-  await page.getByLabel('Cor principal', { exact: true }).fill('#6366f1');
-  const preview = page.frameLocator('iframe[title="Prévia do protótipo"]');
-  await expect(preview.locator('canvas').first()).toBeVisible();
-  await expect(
-    preview.getByText('Alpha Atualizada', { exact: true }).first(),
-  ).toBeVisible();
-  await expect
-    .poll(async () =>
-      preview
-        .locator('html')
-        .evaluate((element) =>
-          getComputedStyle(element).getPropertyValue('--brand-primary').trim(),
-        ),
-    )
-    .toBe('#6366f1');
-  await expect(preview.locator('[data-tour="bot-start"]')).toHaveCSS(
-    'background-color',
-    'rgb(74, 222, 128)',
-  );
-  await expect(
-    preview.getByText(/^(COMPRA|BUY)$/, { exact: true }).first(),
-  ).toHaveCSS('color', 'rgb(74, 222, 128)');
-  await expect(
-    preview.getByText('WIN (+$20.00)', { exact: true }).first(),
-  ).toHaveCSS('color', 'rgb(74, 222, 128)');
-  expect(
-    (await state(page.request)).state.tenants.some(
-      (t) => t.name === 'Alpha Visual',
-    ),
-  ).toBe(true);
-  await expect(page.locator('.gt-eyebrow')).toHaveCount(0);
-  await expect(page.locator('.gt-footer')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Salvar alterações' }).click();
-  await expect(
-    page.getByRole('status').filter({ hasText: 'Alterações salvas.' }),
-  ).toBeVisible();
-  await page.screenshot({
-    path: 'outputs/gotrade-admin-platform.png',
-    fullPage: true,
-  });
-  const stored = await state(page.request);
-  const tenant = stored.state.tenants.find(
-    (t) => t.name === 'Alpha Atualizada',
-  )!;
-  expect(tenant.color).toBe('#6366f1');
-  expect(tenant.secondaryColor).toBe('#ffffff');
-  expect(stored.state.checkouts).toEqual([]);
-  await page.reload();
-  await expect(
-    page.getByRole('heading', { name: 'Plataforma', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByLabel('Nome da plataforma', { exact: true }),
-  ).toHaveValue('Alpha Atualizada');
-  await page.getByRole('button', { name: 'Todos os tenants' }).click();
-  await page.reload();
-  await expect(
-    page.getByRole('heading', { name: 'Alpha Atualizada', exact: true }),
-  ).toBeVisible();
-  await page.screenshot({
-    path: 'outputs/gotrade-admin-tenants.png',
-    fullPage: true,
-  });
-  await page.getByRole('button', { name: 'Sair da conta' }).click();
-  await expect(page).toHaveURL(/\/login/);
-  await page.goto('/platform');
-  await expect(page).toHaveURL(/\/login/);
-  expect(errors).toEqual([]);
-});
-
 test('tenant navigation, invitation, integrations and authorized branding updates', async ({
   page,
   browser,
@@ -177,10 +73,10 @@ test('tenant navigation, invitation, integrations and authorized branding update
     .fill('Tenant-Password-Test-2026');
   await tenantPage.getByRole('button', { name: 'Ativar conta' }).click();
   await expect(
-    tenantPage.getByRole('heading', { name: 'Conexões', exact: true }),
+    tenantPage.getByRole('heading', { name: 'Plataforma', exact: true }),
   ).toBeVisible();
   const nav = tenantPage.getByRole('navigation', { name: 'Menu principal' });
-  await expect(nav.getByRole('link')).toHaveCount(3);
+  await expect(nav.getByRole('link')).toHaveCount(4);
   await expect(
     nav.getByRole('link', { name: 'Conexões', exact: true }),
   ).toBeVisible();
@@ -193,6 +89,7 @@ test('tenant navigation, invitation, integrations and authorized branding update
   await expect(
     tenantPage.getByRole('button', { name: 'Novo tenant' }),
   ).toHaveCount(0);
+  await nav.getByRole('link', { name: 'Conexões', exact: true }).click();
   await expect(
     tenantPage.getByRole('heading', { name: 'Bybit', exact: true }),
   ).toBeVisible();
@@ -296,9 +193,7 @@ test('tenant navigation, invitation, integrations and authorized branding update
   await expect(
     tenantPage.getByRole('status').filter({ hasText: 'Dados atualizados.' }),
   ).toBeVisible();
-  await tenantPage
-    .getByRole('button', { name: 'Sair da conta', exact: true })
-    .click();
+  await tenantPage.getByRole('button', { name: 'Sair', exact: true }).click();
   await expect(tenantPage).toHaveURL(/\/login/);
   await tenantPage.getByLabel('E-mail', { exact: true }).fill(tenant.email);
   await tenantPage
@@ -306,7 +201,7 @@ test('tenant navigation, invitation, integrations and authorized branding update
     .fill('Tenant-New-Password-2026');
   await tenantPage.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    tenantPage.getByRole('heading', { name: 'Conexões', exact: true }),
+    tenantPage.getByRole('heading', { name: 'Plataforma', exact: true }),
   ).toBeVisible();
   const nextEmail = crypto.randomUUID() + '@example.test';
   const duplicate = await context.request.post('/api/auth/profile', {
@@ -323,9 +218,7 @@ test('tenant navigation, invitation, integrations and authorized branding update
   expect(changedSession.email).toBe(nextEmail);
   expect(changedSession.state.tenants[0].email).toBe(nextEmail);
   expect(changedSession.state.tenants).toHaveLength(1);
-  await tenantPage
-    .getByRole('button', { name: 'Sair da conta', exact: true })
-    .click();
+  await tenantPage.getByRole('button', { name: 'Sair', exact: true }).click();
   await expect(tenantPage).toHaveURL(/\/login/);
   await tenantPage.getByLabel('E-mail', { exact: true }).fill(nextEmail);
   await tenantPage
@@ -333,7 +226,7 @@ test('tenant navigation, invitation, integrations and authorized branding update
     .fill('Tenant-New-Password-2026');
   await tenantPage.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    tenantPage.getByRole('heading', { name: 'Conexões', exact: true }),
+    tenantPage.getByRole('heading', { name: 'Plataforma', exact: true }),
   ).toBeVisible();
   await context.close();
 });
@@ -458,83 +351,6 @@ test('Rotas diretas e fallbacks preservam o destino e o status', async ({
   expect(await unknown.text()).toContain('Página não encontrada');
 });
 
-test('admin filters tenants and confirms suspension without losing platform data', async ({
-  page,
-}) => {
-  await login(page);
-  const tenant = await seedTenant(page.request, 'Admin Gestão Simples');
-  const current = await state(page.request);
-  expect(
-    (
-      await save(page.request, current, 'applicationBranding', {
-        id: tenant.id,
-        name: tenant.name,
-        color: tenant.color,
-        secondaryColor: '#ffffff',
-        logo: '',
-        domain: `gestao-${crypto.randomUUID()}.example.test`,
-      })
-    ).status(),
-  ).toBe(200);
-  await page.reload();
-  await page.getByLabel('Buscar tenants').fill('Admin Gestão Simples');
-  const row = page
-    .locator('.gt-tenant-row')
-    .filter({ hasText: 'Admin Gestão Simples' });
-  await expect(row).toHaveCount(1);
-  await expect(row).toContainText('Domínio cadastrado:');
-  await page.getByLabel('Filtrar tenants').selectOption('pending');
-  await expect(row).toHaveCount(0);
-  await page.getByRole('button', { name: 'Limpar filtros' }).click();
-  await page.getByLabel('Buscar tenants').fill('Admin Gestão Simples');
-  await row.getByRole('button', { name: 'Gerenciar acesso' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Acesso', exact: true }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Suspender tenant' }).click();
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: 'Cancelar', exact: true })
-    .click();
-  expect(
-    (await state(page.request)).state.tenants.find((t) => t.id === tenant.id)
-      ?.status,
-  ).toBe('active');
-  await page.getByRole('button', { name: 'Suspender tenant' }).click();
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: 'Confirmar suspensão' })
-    .click();
-  await expect(
-    page.getByRole('button', { name: 'Reativar tenant' }),
-  ).toBeVisible();
-  expect(
-    (await page.request.get(`/api/branding?tenant=${tenant.id}`)).status(),
-  ).toBe(403);
-  await page.getByRole('button', { name: 'Reativar tenant' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Suspender tenant' }),
-  ).toBeVisible();
-  expect(
-    (await page.request.get(`/api/branding?tenant=${tenant.id}`)).status(),
-  ).toBe(200);
-  await page.getByRole('button', { name: 'Todos os tenants' }).click();
-  await page.screenshot({
-    path: 'outputs/gotrade-admin-overview.png',
-    fullPage: true,
-  });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({
-    path: 'outputs/gotrade-admin-mobile.png',
-    fullPage: true,
-  });
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
-});
-
 test('admin user directory and demo payments persist across navigation', async ({
   page,
 }) => {
@@ -574,47 +390,243 @@ test('admin user directory and demo payments persist across navigation', async (
   });
 });
 
-test('admin connection catalog and tenant overview preserve configured settings', async ({
+test('tenant modal unifies payments, access and connection permissions', async ({
   page,
 }) => {
   await login(page);
-  const tenant = await seedTenant(page.request, 'Tenant Catálogo');
-  await page.goto('/settings');
-  await page
-    .locator('.gt-setting-toggle')
-    .filter({ hasText: 'Bybit' })
-    .getByRole('checkbox')
-    .uncheck();
-  await page.getByLabel('E-mail de suporte').fill('suporte@example.test');
-  await page.getByLabel('Plano sugerido').fill('Premium mensal');
-  await page.getByRole('button', { name: 'Salvar configurações' }).click();
-  await expect(page.getByRole('status')).toContainText('Alterações salvas');
+  const t = await seedTenant(page.request, 'Modal 360');
+  const s = await state(page.request);
+  expect(
+    (
+      await save(page.request, s, 'billing', {
+        id: crypto.randomUUID(),
+        tenantId: t.id,
+        plan: 'Licença',
+        amountCents: 300000,
+        due: '2026-10-01',
+        status: 'paid',
+      })
+    ).status(),
+  ).toBe(200);
   await page.reload();
+  await page.getByLabel('Buscar tenants').fill(t.name);
+  await page.getByRole('button', { name: `Opções de ${t.name}` }).click();
+  const d = page.getByRole('dialog');
+  await expect(d).toContainText(t.email);
+  await expect(page.locator('.gt-admin-overview button')).toHaveCount(0);
+  await expect(page.getByText('Gerenciar acesso', { exact: true })).toHaveCount(
+    0,
+  );
+  await d.getByRole('button', { name: 'Pagamentos', exact: true }).click();
+  await expect(d.locator('tbody')).toContainText('Licença');
+  await expect(d).toContainText('Pago');
+  await d.getByRole('button', { name: 'Acesso e conexões' }).click();
+  await d.getByLabel('Adicionar conexão').selectOption('XGlobal');
+  await expect(d.locator('.gt-connection-box')).toContainText('XGlobal');
+  await d.getByLabel('Status do tenant').selectOption('suspended');
+  await d.getByRole('button', { name: 'Salvar tenant' }).click();
   await expect(
-    page
-      .locator('.gt-setting-toggle')
-      .filter({ hasText: 'Bybit' })
-      .getByRole('checkbox'),
-  ).not.toBeChecked();
-  await expect(page.getByLabel('Plano sugerido')).toHaveValue('Premium mensal');
-  await page.goto(`/tenants?tenant=${tenant.id}&section=overview`);
-  await expect(
-    page.getByRole('heading', { name: `Acompanhamento de ${tenant.name}` }),
+    page.getByRole('status').filter({ hasText: 'Alterações salvas' }),
   ).toBeVisible();
-  await expect(
-    page.getByRole('link', { name: 'Abrir plataforma' }),
-  ).toHaveAttribute('href', `/prototipo/app?tenant=${tenant.id}`);
-  await page.getByRole('button', { name: 'Ver histórico completo' }).click();
-  await page.getByRole('button', { name: 'Novo registro' }).click();
-  await expect(
-    page.getByRole('dialog').getByLabel('Plano', { exact: true }),
-  ).toHaveValue('Premium mensal');
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: 'Cancelar' })
-    .click();
+  expect(
+    (await page.request.get(`/api/branding?tenant=${t.id}`)).status(),
+  ).toBe(403);
+  await d.getByLabel('Status do tenant').selectOption('active');
+  await d.getByRole('button', { name: 'Salvar tenant' }).click();
+  await expect
+    .poll(async () =>
+      (await page.request.get(`/api/branding?tenant=${t.id}`)).status(),
+    )
+    .toBe(200);
+  expect(
+    (await state(page.request)).state.tenants.find((x) => x.id === t.id)
+      ?.connections,
+  ).toContain('XGlobal');
   await page.screenshot({
-    path: 'outputs/gotrade-tenant-payments.png',
+    path: 'outputs/gotrade-modal-360.png',
     fullPage: true,
   });
+  await d.getByRole('button', { name: 'Close' }).click();
+  await expect(page).toHaveURL(/\/tenants$/);
+});
+
+test('settings persist catalog and price; new tenant link opens public checkout', async ({
+  page,
+  browser,
+}) => {
+  await login(page);
+  await page
+    .getByRole('button', { name: 'Configurações', exact: true })
+    .click();
+  await expect(page.getByLabel('Plano sugerido')).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', { name: 'Minha conta' }),
+  ).toBeVisible();
+  await page.getByLabel('Valor para ser tenant (R$)').fill('3999.90');
+  await page
+    .getByLabel('Suporte Telegram')
+    .fill('https://t.me/gotrade_suporte');
+  await page
+    .locator('.gt-setting-toggle')
+    .filter({ hasText: 'XR' })
+    .getByRole('checkbox')
+    .uncheck();
+  await page.getByRole('button', { name: 'Salvar configurações' }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Alterações salvas' }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Valor para ser tenant (R$)')).toHaveValue(
+    '3999.9',
+  );
+  await page.getByRole('button', { name: 'Tenants', exact: true }).click();
+  await page.getByRole('button', { name: 'Novo tenant', exact: true }).click();
+  await page.getByRole('button', { name: 'Gerar link de contratação' }).click();
+  const input = page.getByLabel('Link da contratação', { exact: true });
+  await expect(input).toBeVisible();
+  const url = await input.inputValue();
+  await expect(
+    page.getByRole('button', { name: 'Copiar link', exact: true }),
+  ).toBeVisible();
+  const ctx = await browser.newContext();
+  const buyer = await ctx.newPage();
+  await buyer.goto(url + '?valor=1');
+  await expect(
+    buyer.getByRole('heading', { name: 'Sua plataforma começa aqui' }),
+  ).toBeVisible();
+  await expect(buyer.locator('.gt-order-total')).toContainText('3.999,90');
+  await buyer.getByLabel('Nome completo').fill('Camila Teste');
+  await buyer.getByLabel('E-mail', { exact: true }).fill('camila@example.test');
+  await buyer.getByLabel('Nome da plataforma').fill('Camila Trade');
+  await buyer.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await expect(
+    buyer.getByRole('heading', { name: 'Revise sua contratação' }),
+  ).toBeVisible();
+  await expect(buyer.locator('dl')).toContainText('Camila Trade');
+  await buyer.screenshot({
+    path: 'outputs/gotrade-contratacao.png',
+    fullPage: true,
+  });
+  expect(
+    (
+      await ctx.request.get(
+        origin + '/contratar/' + crypto.randomUUID() + '?valor=300000',
+      )
+    ).status(),
+  ).toBe(404);
+  await ctx.close();
+});
+
+test('tenant platform is static and tickets are isolated with admin replies', async ({
+  page,
+  browser,
+}) => {
+  await login(page);
+  const t = await seedTenant(page.request, 'Suporte Tenant');
+  const other = await seedTenant(page.request, 'Suporte Outro');
+  const admin = await state(page.request);
+  expect(
+    (
+      await save(page.request, admin, 'ticket', {
+        tenantId: other.id,
+        subject: 'Privado outro',
+        message: 'Mensagem privada',
+      })
+    ).status(),
+  ).toBe(200);
+  const invite = await page.request.post('/api/auth/invite', {
+    headers: { origin },
+    data: { tenantId: t.id },
+  });
+  const ctx = await browser.newContext({ baseURL: origin });
+  const p = await ctx.newPage();
+  await p.goto((await invite.json()).url);
+  await p.getByLabel('Crie uma senha').fill('Tenant-Password-2026');
+  await p.getByRole('button', { name: 'Ativar conta' }).click();
+  await expect(
+    p.getByRole('heading', { name: 'Plataforma', exact: true }),
+  ).toBeVisible();
+  await expect(p.locator('.gt-static-preview img')).toBeVisible();
+  await expect(p.locator('.gt-live-preview iframe')).toHaveCount(0);
+  expect(
+    await p
+      .locator('.gt-static-preview img')
+      .evaluate((e: HTMLImageElement) => e.naturalWidth),
+  ).toBeGreaterThan(0);
+  await p.getByLabel('Valor do checkout (R$)').fill('2200');
+  await p
+    .getByLabel('Webhook', { exact: true })
+    .fill('https://example.test/hooks');
+  await p
+    .getByRole('button', { name: 'Salvar alterações', exact: true })
+    .click();
+  await expect(
+    p.getByRole('status').filter({ hasText: 'Alterações salvas' }),
+  ).toBeVisible();
+  await p.reload();
+  await expect(p.getByLabel('Valor do checkout (R$)')).toHaveValue('2200');
+  await expect(p.getByLabel('Webhook', { exact: true })).toHaveValue(
+    'https://example.test/hooks',
+  );
+  await p.evaluate(() => {
+    (window as unknown as { marker: string }).marker = 'same-document';
+  });
+  const nav = p.getByRole('navigation', { name: 'Menu principal' });
+  await nav.getByRole('link', { name: 'Suporte', exact: true }).click();
+  expect(
+    await p.evaluate(() => (window as unknown as { marker: string }).marker),
+  ).toBe('same-document');
+  await expect(p.locator('.gt-loading')).toHaveCount(0);
+  await p.getByRole('button', { name: 'Novo ticket' }).click();
+  await p.getByLabel('Assunto').fill('Minha conexão');
+  await p
+    .getByLabel('Mensagem', { exact: true })
+    .fill('Preciso de uma orientação');
+  await p.getByRole('button', { name: 'Enviar ticket' }).click();
+  await expect(p.locator('.gt-ticket-row')).toContainText('Minha conexão');
+  const session = await state(ctx.request);
+  expect(
+    session.state.tickets?.some((x) => x.subject === 'Privado outro'),
+  ).toBe(false);
+  expect((await save(ctx.request, session, 'purchaseLink', {})).status()).toBe(
+    403,
+  );
+  expect(
+    (
+      await save(ctx.request, session, 'ticketReply', {
+        id: session.state.tickets![0].id,
+        message: 'Ataque',
+      })
+    ).status(),
+  ).toBe(403);
+  const brand = await (
+    await ctx.request.get(`/api/branding?tenant=${t.id}`)
+  ).json();
+  expect(brand.webhook).toBeUndefined();
+  await page.reload();
+  await page.getByRole('button', { name: 'Suporte', exact: true }).click();
+  await page.getByRole('button', { name: /Minha conexão/ }).click();
+  await page.getByLabel('Responder ticket').fill('Sua conexão foi revisada.');
+  await page
+    .getByRole('button', { name: 'Salvar e encaminhar resposta' })
+    .click();
+  await expect(page.getByRole('dialog')).toContainText('aguarda configuração');
+  await p.reload();
+  await p.getByRole('button', { name: /Minha conexão/ }).click();
+  await expect(p.getByRole('dialog')).toContainText(
+    'Sua conexão foi revisada.',
+  );
+  expect(
+    (
+      await ctx.request.post('/api/support/deliver', {
+        headers: { origin },
+        data: { ticketId: session.state.tickets![0].id, replyId: 'invalid' },
+      })
+    ).status(),
+  ).toBe(403);
+  await page.screenshot({
+    path: 'outputs/gotrade-suporte.png',
+    fullPage: true,
+  });
+  await ctx.close();
 });

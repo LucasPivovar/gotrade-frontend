@@ -60,6 +60,10 @@ export function scoped(w: Awaited<ReturnType<typeof workspace>>) {
   return {
     ...w.state,
     billing: w.role === 'admin' ? w.state.billing || [] : [],
+    purchaseLinks: w.role === 'admin' ? w.state.purchaseLinks || [] : [],
+    tickets: (w.state.tickets || []).filter(
+      (t) => w.role === 'admin' || t.tenantId === w.tenantId,
+    ),
     tenants: w.state.tenants.filter(
       (t) => w.role === 'admin' || t.id === w.tenantId,
     ),

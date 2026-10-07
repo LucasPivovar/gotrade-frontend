@@ -1,6 +1,8 @@
 import { slugify, type Tenant } from './model';
 
 export type ApplicationBrand = {
+  checkoutPriceCents?: number;
+  webhook?: string;
   name: string;
   color: string;
   secondaryColor: string;
@@ -22,11 +24,36 @@ export function validateApplicationBrand(value: unknown): ApplicationBrand {
     throw Error('Informe uma cor principal no formato #RRGGBB.');
   const secondaryColor = input.secondaryColor ?? '#ffffff';
   if (
+    input.checkoutPriceCents !== undefined &&
+    (!Number.isSafeInteger(input.checkoutPriceCents) ||
+      Number(input.checkoutPriceCents) <= 0 ||
+      Number(input.checkoutPriceCents) > 100000000)
+  )
+    throw Error('Informe um valor válido para o checkout.');
+  if (input.webhook !== undefined) {
+    if (typeof input.webhook !== 'string' || input.webhook.length > 2048)
+      throw Error('Webhook inválido.');
+    if (input.webhook) {
+      try {
+        const u = new URL(input.webhook);
+        if (u.protocol !== 'https:' || u.username || u.password) throw Error();
+      } catch {
+        throw Error('O webhook deve ser uma URL HTTPS.');
+      }
+    }
+  }
+  if (
     typeof secondaryColor !== 'string' ||
     !/^#[0-9a-f]{6}$/i.test(secondaryColor)
   )
     throw Error('Informe uma cor secundária no formato #RRGGBB.');
   return {
+    ...(input.checkoutPriceCents !== undefined
+      ? { checkoutPriceCents: Number(input.checkoutPriceCents) }
+      : {}),
+    ...(input.webhook !== undefined
+      ? { webhook: String(input.webhook).trim() }
+      : {}),
     name: input.name.trim(),
     color: input.color.toLowerCase(),
     secondaryColor: secondaryColor.toLowerCase(),

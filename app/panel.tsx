@@ -1,14 +1,8 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft,
-  ArrowUpRight,
-  Check,
-  ChevronRight,
-  Globe,
-  CirclePause,
   LogOut,
   Palette,
   Plus,
@@ -16,155 +10,152 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  UserRound,
   Users,
-  Zap,
+  CirclePause,
+  Globe,
+  LifeBuoy,
+  CreditCard,
+  Check,
+  ArrowUpRight,
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import AccountInvite from '@/components/account-invite';
+import { providers, type Session, type Tenant } from '@/lib/model';
+import { validateApplicationBrand } from '@/lib/application';
+import { applyBrandTheme } from '@/lib/brand-theme';
 import PlatformPreview from '@/components/platform-preview';
 import LogoEditor from '@/components/logo-editor';
 import AdminSettings from '@/components/admin-settings';
-import TenantOverview from '@/components/tenant-overview';
 import { AdminPayments } from '@/components/admin-management';
-import { providers, type Session, type Tenant } from '@/lib/model';
-import { createApplication, validateApplicationBrand } from '@/lib/application';
-import { applyBrandTheme } from '@/lib/brand-theme';
-import { create as palette } from '@/lib/brand-palette';
-
+import TenantDirectory from '@/components/tenant-directory';
+import SupportCenter from '@/components/support-center';
+import PurchaseLinkModal from '@/components/purchase-link-modal';
 const sections = [
-  { id: 'connections', label: 'Conexões', icon: Plug, href: '/connections' },
-  { id: 'platform', label: 'Plataforma', icon: Palette, href: '/platform' },
-  { id: 'settings', label: 'Configurações', icon: Settings, href: '/settings' },
+  { id: 'platform', label: 'Plataforma', icon: Palette },
+  { id: 'connections', label: 'Conexões', icon: Plug },
+  { id: 'support', label: 'Suporte', icon: LifeBuoy },
+  { id: 'settings', label: 'Configurações', icon: Settings },
 ];
-
+const adminSections = [
+  { id: 'tenants', label: 'Tenants', icon: Users },
+  { id: 'payments', label: 'Pagamentos', icon: CreditCard },
+  { id: 'support', label: 'Suporte', icon: LifeBuoy },
+  { id: 'settings', label: 'Configurações', icon: Settings },
+];
 export default function Panel({
-  initialView = 'connections',
-}: { initialView?: string } = {}) {
+  initialView = 'platform',
+  initialSession,
+  demoSample = false,
+}: {
+  initialView?: string;
+  initialSession?: Session;
+  demoSample?: boolean;
+}) {
   const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [selectedId, setSelectedId] = useState('');
-  const [view, setView] = useState(
-    ['connections', 'platform', 'settings'].includes(initialView)
-      ? initialView
-      : 'connections',
+  const [session, setSession] = useState<Session | null>(
+    initialSession || null,
   );
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<
-    'all' | 'active' | 'suspended' | 'pending'
-  >('all');
-  const [creating, setCreating] = useState(false);
-  const [creationError, setCreationError] = useState('');
-  const [newName, setNewName] = useState('');
-  const [newAdmin, setNewAdmin] = useState('');
-  const [newEmail, setNewEmail] = useState('');
+  const latest = useRef(session);
   const admin = session?.role === 'admin';
-  const tenant = session?.state.tenants.find(
-    (t) => t.id === (admin ? selectedId : session.tenantId),
-  );
-
+  const tenant = session?.state.tenants.find((t) => t.id === session.tenantId);
+  const [view, setView] = useState(
+      initialView === 'connections' && initialSession?.role === 'admin'
+        ? 'tenants'
+        : initialView,
+    ),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [notice, setNotice] = useState(''),
+    [search, setSearch] = useState(''),
+    [statusFilter, setStatusFilter] = useState('all'),
+    [creating, setCreating] = useState(false),
+    [linkBaseline, setLinkBaseline] = useState('');
+  const update = (s: Session) => {
+    latest.current = s;
+    setSession(s);
+  };
   const load = useCallback(async () => {
-    setError('');
     try {
-      const response = await fetch('/api/workspace', { cache: 'no-store' });
-      const data = await response.json();
-      if (response.status === 401) {
+      const r = await fetch('/api/workspace', { cache: 'no-store' });
+      const data = await r.json();
+      if (r.status === 401) {
         router.replace('/login');
         return;
       }
-      if (!response.ok)
-        throw Error(data.error || 'Não foi possível carregar os dados.');
+      if (!r.ok) throw Error(data.error);
+      latest.current = data;
       setSession(data);
-      const params = new URLSearchParams(window.location.search);
-      if (
-        data.role === 'admin' &&
-        ['overview', 'payments'].includes(params.get('section') || '')
-      )
-        setView(params.get('section')!);
-      const requestedId = params.get('tenant');
-      if (
-        data.role === 'admin' &&
-        requestedId &&
-        (data as Session).state.tenants.some((t) => t.id === requestedId)
-      ) {
-        setSelectedId(requestedId);
-        const section = params.get('section') || 'platform';
-        setView(
-          ['overview', 'payments'].includes(section) ||
-            sections.some((s) => s.id === section)
-            ? section
-            : 'platform',
-        );
-      }
     } catch (e) {
       setError((e as Error).message);
     }
   }, [router]);
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!initialSession) void load();
+  }, [initialSession, load]);
   useEffect(() => {
     applyBrandTheme(admin ? undefined : tenant);
-    document.title = tenant ? `${tenant.name} | Gotrade` : 'Gotrade';
-  }, [tenant, admin]);
-
+  }, [admin, tenant]);
   useEffect(() => {
     const restore = () => {
-      const params = new URLSearchParams(location.search);
-      setSelectedId(params.get('tenant') || '');
-      const section = params.get('section') || location.pathname.slice(1);
+      const p = new URLSearchParams(location.search);
+      const next = p.get('section') || location.pathname.slice(1);
       setView(
-        ['overview', 'payments'].includes(section) ||
-          sections.some((s) => s.id === section)
-          ? section
-          : 'connections',
+        [
+          'tenants',
+          'payments',
+          'support',
+          'settings',
+          'platform',
+          'connections',
+        ].includes(next)
+          ? next
+          : latest.current?.role === 'admin'
+            ? 'tenants'
+            : 'platform',
       );
-      setNotice('');
-      setError('');
     };
+    restore();
     window.addEventListener('popstate', restore);
     return () => window.removeEventListener('popstate', restore);
   }, []);
-  async function save(action: string, value: unknown): Promise<boolean> {
-    if (!session || busy) return false;
+  const navigate = (next: string) => {
+    setView(next);
+    setError('');
+    setNotice('');
+    window.history.pushState(
+      null,
+      '',
+      admin && next === 'payments' ? '/tenants?section=payments' : `/${next}`,
+    );
+  };
+  async function save(action: string, value: unknown) {
+    if (!latest.current || busy) return false;
     setBusy(true);
     setError('');
     setNotice('');
     try {
-      const response = await fetch('/api/workspace', {
+      const r = await fetch('/api/workspace', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, value, revision: session.revision }),
+        body: JSON.stringify({
+          action,
+          value,
+          revision: latest.current.revision,
+        }),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        if (response.status === 409) await load();
+      const data = await r.json();
+      if (!r.ok) {
+        if (r.status === 409) await load();
         throw Error(data.error || 'Não foi possível salvar.');
       }
-      setSession(data);
+      update(data);
       setNotice('Alterações salvas.');
       if (
         action === 'applicationBranding' &&
         typeof BroadcastChannel !== 'undefined'
       ) {
         const id = (value as { id: string }).id;
-        const brand = (data as Session).state.tenants.find((t) => t.id === id);
-        const channel = new BroadcastChannel(`gotrade_branding_${id}`);
-        channel.postMessage({
-          type: 'WHITELABEL_BRANDING_UPDATE',
-          tenantId: id,
-          branding: brand,
-        });
-        channel.close();
+        const c = new BroadcastChannel(`gotrade_branding_${id}`);
+        c.postMessage({ type: 'WHITELABEL_BRANDING_UPDATE', tenantId: id });
+        c.close();
       }
       return true;
     } catch (e) {
@@ -174,75 +165,49 @@ export default function Panel({
       setBusy(false);
     }
   }
+  async function deliver(id: string) {
+    const t = latest.current?.state.tickets?.find((t) => t.id === id);
+    const reply = t?.replies.at(-1);
+    if (!reply) return 'Resposta salva.';
+    try {
+      const r = await fetch('/api/support/deliver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId: id, replyId: reply.id }),
+      });
+      const d = await r.json();
+      if (d.session) update(d.session);
+      return d.message || d.error || 'Resposta salva.';
+    } catch {
+      return 'Resposta salva. Não foi possível encaminhar o e-mail.';
+    }
+  }
   async function logout() {
     setBusy(true);
-    setError('');
     try {
-      const response = await fetch('/api/auth/logout', { method: 'POST' });
-      if (!response.ok) throw Error('Não foi possível sair.');
+      const r = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!r.ok) throw Error('Não foi possível sair.');
       window.location.assign('/login');
     } catch (e) {
       setError((e as Error).message);
       setBusy(false);
     }
   }
-  function navigate(next: string, id = selectedId) {
-    setView(next);
-    setError('');
-    setNotice('');
-    if (admin) {
-      const target = id
-        ? `/tenants?tenant=${encodeURIComponent(id)}&section=${next}`
-        : next === 'settings'
-          ? '/settings'
-          : ['overview', 'payments'].includes(next)
-            ? `/tenants?section=${next}`
-            : '/tenants';
-      window.history.pushState(null, '', target);
-    } else {
-      window.history.pushState(null, '', `/${next}`);
-    }
-  }
-  function openTenant(t: Tenant) {
-    setSelectedId(t.id);
-    navigate('overview', t.id);
-  }
-
   if (!session)
     return (
       <main className="gt-loading">
-        <Zap size={32} />
-        <h1>Gotrade</h1>
-        {error ? (
-          <>
-            <p role="alert">{error}</p>
-            <button className="gt-button" onClick={() => void load()}>
-              Tentar novamente
-            </button>
-          </>
-        ) : (
-          <p>Carregando seu espaço…</p>
+        <p>{error || 'Abrindo seu espaço…'}</p>
+        {error && (
+          <button className="gt-button" onClick={() => void load()}>
+            Tentar novamente
+          </button>
         )}
       </main>
     );
-  const managing = admin && !!tenant;
-  const title =
-    admin && !tenant
-      ? view === 'settings'
-        ? 'Configurações'
-        : view === 'users'
-          ? 'Usuários'
-          : view === 'payments'
-            ? 'Pagamentos'
-            : 'Tenants'
-      : admin && view === 'settings'
-        ? 'Acesso'
-        : view === 'overview'
-          ? 'Visão geral'
-          : view === 'payments'
-            ? 'Pagamentos'
-            : sections.find((s) => s.id === view)?.label || 'Conexões';
+  const tabs = admin ? adminSections : sections;
+  const current = tabs.find((s) => s.id === view) || tabs[0];
   const tenants = session.state.tenants;
+  const catalog = session.state.settings?.enabledProviders || providers;
   const filtered = tenants.filter(
     (t) =>
       `${t.name} ${t.admin} ${t.email} ${t.domain}`
@@ -251,130 +216,52 @@ export default function Panel({
       (statusFilter === 'all' ||
         (statusFilter === 'pending' ? !t.domain : t.status === statusFilter)),
   );
-
+  const isList = admin && !['payments', 'support', 'settings'].includes(view);
   return (
     <div className="gt-shell">
       <aside className="gt-sidebar">
-        <Link href="/" className="gt-brand">
-          <strong>Gotrade</strong>
+        <Link
+          href={admin ? '/tenants' : '/platform'}
+          className="gt-brand"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate(admin ? 'tenants' : 'platform');
+          }}
+        >
+          <img src="/brand/gotrade-logo.svg" alt="GoTrade" />
         </Link>
-        <span className="gt-workspace-label">
-          {admin ? 'ADMINISTRAÇÃO' : 'SEU ESPAÇO'}
-        </span>
-        {tenant && (
-          <div className="gt-workspace">
-            <span
-              className="gt-avatar"
-              style={{
-                background: tenant.color,
-                color: palette(tenant.color).onPrimary,
-              }}
-            >
-              {tenant.name.slice(0, 2).toUpperCase()}
-            </span>
-            <div>
-              <strong>{tenant.name}</strong>
-              <small>
-                {managing ? 'Tenant selecionado' : 'Sua plataforma'}
-              </small>
-            </div>
-          </div>
-        )}
-        {managing && (
-          <button
-            className="gt-back"
-            onClick={() => {
-              setSelectedId('');
-              navigate('connections', '');
-            }}
-          >
-            <ArrowLeft size={16} />
-            Todos os tenants
-          </button>
-        )}
         <nav aria-label="Menu principal">
-          {admin && !tenant ? (
-            <>
+          {tabs.map(({ id, label, icon: Icon }) =>
+            admin ? (
               <button
+                key={id}
                 className={
-                  !['settings', 'overview', 'payments'].includes(view)
+                  current.id === id || (isList && id === 'tenants')
                     ? 'active'
                     : ''
                 }
-                onClick={() => navigate('connections')}
+                onClick={() => navigate(id)}
               >
-                <Users size={19} />
-                Tenants
+                <Icon size={19} />
+                {label}
               </button>
-
-              <button
-                className={view === 'payments' ? 'active' : ''}
-                onClick={() => navigate('payments')}
+            ) : (
+              <Link
+                key={id}
+                href={`/${id}`}
+                className={current.id === id ? 'active' : ''}
+                aria-current={current.id === id ? 'page' : undefined}
+                onClick={(e) => {
+                  if (!e.metaKey && !e.ctrlKey && e.button === 0) {
+                    e.preventDefault();
+                    navigate(id);
+                  }
+                }}
               >
-                <ShieldCheck size={19} />
-                Pagamentos
-              </button>
-              <button
-                className={view === 'settings' ? 'active' : ''}
-                onClick={() => navigate('settings')}
-              >
-                <Settings size={19} />
-                Configurações
-              </button>
-            </>
-          ) : (
-            [
-              ...(managing
-                ? [
-                    {
-                      id: 'overview',
-                      label: 'Visão geral',
-                      icon: ShieldCheck,
-                      href: '',
-                    },
-                    {
-                      id: 'payments',
-                      label: 'Pagamentos',
-                      icon: ShieldCheck,
-                      href: '',
-                    },
-                  ]
-                : []),
-              ...sections,
-            ].map(({ id, label, icon: Icon, href }) =>
-              managing ? (
-                <button
-                  key={id}
-                  className={view === id ? 'active' : ''}
-                  onClick={() => navigate(id)}
-                >
-                  <Icon size={19} />
-                  {id === 'settings' ? 'Acesso' : label}
-                </button>
-              ) : (
-                <Link
-                  key={id}
-                  href={href}
-                  onClick={(e) => {
-                    if (
-                      e.button === 0 &&
-                      !e.metaKey &&
-                      !e.ctrlKey &&
-                      !e.shiftKey &&
-                      !e.altKey
-                    ) {
-                      e.preventDefault();
-                      navigate(id);
-                    }
-                  }}
-                  className={view === id ? 'active' : ''}
-                  aria-current={view === id ? 'page' : undefined}
-                >
-                  <Icon size={19} />
-                  {label}
-                </Link>
-              ),
-            )
+                <Icon size={19} />
+                {label}
+              </Link>
+            ),
           )}
         </nav>
         <div className="gt-sidebar-bottom">
@@ -384,55 +271,41 @@ export default function Panel({
             onClick={() => void logout()}
           >
             <LogOut size={20} />
-            Sair da conta
+            Sair
           </button>
         </div>
       </aside>
       <div className="gt-body">
-        <header className="gt-topbar">
-          {managing ? <span>Tenants / {tenant.name}</span> : <span />}
-          <button
-            className="gt-profile"
-            onClick={() => {
-              if (admin) setSelectedId('');
-              navigate('settings', admin ? '' : selectedId);
-            }}
-            aria-label="Meu perfil"
-          >
-            <UserRound size={18} />
-            <span>Meu perfil</span>
-          </button>
-        </header>
         <main className="gt-main">
           <div className="gt-page-heading">
             <div>
-              <h1>{title}</h1>
-              {view !== 'platform' && (
-                <p>
-                  {admin && !tenant && view !== 'settings'
-                    ? 'Gerencie acessos e acompanhe a plataforma de cada tenant.'
-                    : view === 'platform'
-                      ? 'Defina o nome e a paleta que aparecem na sua plataforma.'
-                      : view === 'connections'
-                        ? 'Veja as integrações disponíveis para sua operação.'
-                        : 'Gerencie os dados e o acesso da sua conta.'}
-                </p>
-              )}
+              <h1>{isList ? 'Tenants' : current.label}</h1>
+              <p>
+                {isList
+                  ? 'Plataformas, responsáveis e situação de cada tenant.'
+                  : view === 'payments'
+                    ? 'Controle os registros de pagamentos dos tenants.'
+                    : view === 'support'
+                      ? 'Converse com a equipe e acompanhe os tickets.'
+                      : view === 'settings'
+                        ? 'Sua conta e as preferências do espaço.'
+                        : view === 'platform'
+                          ? 'Personalize a plataforma com sua marca.'
+                          : 'Meios de conexão disponíveis para sua operação.'}
+              </p>
             </div>
-            {admin &&
-              !tenant &&
-              !['settings', 'overview', 'payments'].includes(view) && (
-                <button
-                  className="gt-button gt-primary"
-                  onClick={() => {
-                    setCreationError('');
-                    setCreating(true);
-                  }}
-                >
-                  <Plus size={17} />
-                  Novo tenant
-                </button>
-              )}
+            {isList && (
+              <button
+                className="gt-button gt-primary"
+                onClick={() => {
+                  setLinkBaseline(session.state.purchaseLinks?.[0]?.id || '');
+                  setCreating(true);
+                }}
+              >
+                <Plus size={17} />
+                Novo tenant
+              </button>
+            )}
           </div>
           {error && (
             <div className="gt-alert gt-error" role="alert">
@@ -445,459 +318,174 @@ export default function Panel({
               {notice}
             </output>
           )}
-
-          {admin && !tenant && view === 'payments' && (
+          {isList && (
+            <>
+              <div className="gt-admin-overview">
+                {[
+                  [Users, 'Todos', tenants.length],
+                  [
+                    ShieldCheck,
+                    'Ativos',
+                    tenants.filter((t) => t.status === 'active').length,
+                  ],
+                  [
+                    CirclePause,
+                    'Inativos',
+                    tenants.filter((t) => t.status === 'suspended').length,
+                  ],
+                  [
+                    Globe,
+                    'Sem domínio',
+                    tenants.filter((t) => !t.domain).length,
+                  ],
+                ].map(([Icon, label, count]) => {
+                  const I = Icon as typeof Users;
+                  return (
+                    <div className="gt-admin-metric" key={String(label)}>
+                      <I size={20} />
+                      <span>{String(label)}</span>
+                      <strong>{Number(count)}</strong>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="gt-list-toolbar">
+                <select
+                  aria-label="Filtrar tenants"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="all">Todos</option>
+                  <option value="active">Ativos</option>
+                  <option value="suspended">Inativos</option>
+                  <option value="pending">Sem domínio</option>
+                </select>
+                <label className="gt-search">
+                  <Search size={17} />
+                  <input
+                    aria-label="Buscar tenants"
+                    placeholder="Nome, e-mail ou domínio"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </label>
+              </div>
+              <TenantDirectory
+                tenants={filtered}
+                records={session.state.billing || []}
+                catalog={catalog}
+                busy={busy}
+                onSave={(t) => save('tenant', t)}
+              />
+            </>
+          )}
+          {admin && view === 'payments' && (
             <AdminPayments
               tenants={tenants}
               records={session.state.billing || []}
               busy={busy}
-              defaultPlan={session.state.settings?.defaultPlan}
-              onSave={(value) => save('billing', value)}
-            />
-          )}
-          {admin &&
-            !tenant &&
-            !['settings', 'overview', 'payments'].includes(view) && (
-              <>
-                <div
-                  className="gt-admin-overview"
-                  aria-label="Resumo dos tenants"
-                >
-                  {(
-                    [
-                      ['all', 'Todos', tenants.length],
-                      [
-                        'active',
-                        'Ativos',
-                        tenants.filter((t) => t.status === 'active').length,
-                      ],
-                      [
-                        'suspended',
-                        'Suspensos',
-                        tenants.filter((t) => t.status === 'suspended').length,
-                      ],
-                      [
-                        'pending',
-                        'Sem domínio',
-                        tenants.filter((t) => !t.domain).length,
-                      ],
-                    ] as const
-                  ).map(([id, label, count]) => (
-                    <div key={id} className="gt-admin-metric">
-                      {id === 'all' ? (
-                        <Users size={20} />
-                      ) : id === 'active' ? (
-                        <ShieldCheck size={20} />
-                      ) : id === 'suspended' ? (
-                        <CirclePause size={20} />
-                      ) : (
-                        <Globe size={20} />
-                      )}
-                      <span>{label}</span>
-                      <strong>{count}</strong>
-                    </div>
-                  ))}
-                </div>
-                <div className="gt-list-toolbar">
-                  <select
-                    aria-label="Filtrar tenants"
-                    value={statusFilter}
-                    onChange={(e) =>
-                      setStatusFilter(e.target.value as typeof statusFilter)
-                    }
-                  >
-                    <option value="all">Todos</option>
-                    <option value="active">Ativos</option>
-                    <option value="suspended">Suspensos</option>
-                    <option value="pending">Sem domínio</option>
-                  </select>
-                  <span>
-                    {session.state.tenants.length} tenants{' '}
-                    <span className="gt-muted">
-                      ·{' '}
-                      {
-                        session.state.tenants.filter(
-                          (t) => t.status === 'active',
-                        ).length
-                      }{' '}
-                      ativos
-                    </span>
-                  </span>
-                  <label className="gt-search">
-                    <Search size={17} />
-                    <input
-                      aria-label="Buscar tenants"
-                      placeholder="Nome, responsável, e-mail ou domínio"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className="gt-tenant-list">
-                  {filtered.map((t) => (
-                    <article className="gt-tenant-row" key={t.id}>
-                      <span
-                        className="gt-avatar"
-                        style={{
-                          background: t.color,
-                          color: palette(t.color).onPrimary,
-                        }}
-                      >
-                        {t.name.slice(0, 2).toUpperCase()}
-                      </span>
-                      <div className="gt-tenant-info">
-                        <h2>{t.name}</h2>
-                        <p>
-                          {t.admin || 'Responsável não configurado'}
-                          {t.email ? ` · ${t.email}` : ''}
-                        </p>
-                        <div className="gt-tenant-meta">
-                          <span>
-                            {t.domain
-                              ? `Domínio cadastrado: ${t.domain}`
-                              : 'Domínio não cadastrado'}
-                          </span>
-                          <span>
-                            {t.connections.length}{' '}
-                            {t.connections.length === 1
-                              ? 'conexão habilitada'
-                              : 'conexões habilitadas'}
-                          </span>
-                        </div>
-                      </div>
-                      <span
-                        className={`gt-status ${t.status === 'active' ? 'is-active' : ''}`}
-                      >
-                        {t.status === 'active' ? 'Ativo' : 'Suspenso'}
-                      </span>
-                      <div className="gt-tenant-actions">
-                        <button
-                          className="gt-button"
-                          onClick={() => {
-                            setSelectedId(t.id);
-                            navigate('settings', t.id);
-                          }}
-                        >
-                          Gerenciar acesso
-                        </button>
-                        <button
-                          className="gt-button"
-                          onClick={() => openTenant(t)}
-                        >
-                          Gerenciar tenant
-                          <ChevronRight size={16} />
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                  {!filtered.length && (
-                    <div className="gt-empty">
-                      <Users size={32} />
-                      <h2>
-                        {search || statusFilter !== 'all'
-                          ? 'Nenhum tenant encontrado'
-                          : 'Seu primeiro tenant começa aqui'}
-                      </h2>
-                      <p>
-                        {search || statusFilter !== 'all'
-                          ? 'Tente outro termo ou limpe os filtros.'
-                          : 'Cadastre um tenant para liberar o acesso à sua plataforma.'}
-                      </p>
-                      {!search && statusFilter === 'all' && (
-                        <ol className="gt-admin-steps">
-                          <li>
-                            <span>1</span>
-                            <div>
-                              <strong>Cadastre o responsável</strong>
-                              <p>
-                                Informe o nome da plataforma e o e-mail de quem
-                                vai gerenciar.
-                              </p>
-                            </div>
-                          </li>
-                          <li>
-                            <span>2</span>
-                            <div>
-                              <strong>Libere o acesso</strong>
-                              <p>
-                                Gere um convite para o responsável criar a
-                                senha.
-                              </p>
-                            </div>
-                          </li>
-                          <li>
-                            <span>3</span>
-                            <div>
-                              <strong>Acompanhe a plataforma</strong>
-                              <p>
-                                Gerencie conexões, personalização e status em um
-                                só lugar.
-                              </p>
-                            </div>
-                          </li>
-                        </ol>
-                      )}
-                      {search || statusFilter !== 'all' ? (
-                        <button
-                          className="gt-button"
-                          onClick={() => {
-                            setSearch('');
-                            setStatusFilter('all');
-                          }}
-                        >
-                          Limpar filtros
-                        </button>
-                      ) : (
-                        <button
-                          className="gt-button gt-primary"
-                          onClick={() => setCreating(true)}
-                        >
-                          <Plus size={16} />
-                          Novo tenant
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          {tenant && view === 'connections' && (
-            <>
-              <div className="gt-info">
-                <Plug size={20} />
-                <p>
-                  Veja suas corretoras disponíveis. Nesta amostra, as contas e
-                  operações são simuladas.
-                </p>
-              </div>
-              <div className="gt-connection-grid">
-                {(admin
-                  ? providers
-                  : session.state.settings?.enabledProviders || providers
-                ).map((provider) => {
-                  const enabled = tenant.connections.includes(provider);
-                  return (
-                    <article className="gt-card gt-connection" key={provider}>
-                      <div className="gt-connection-top">
-                        <span className="gt-provider-icon">
-                          <Plug size={25} />
-                        </span>
-                        <span
-                          className={`gt-status ${enabled ? 'is-active' : ''}`}
-                        >
-                          {enabled ? 'Liberada' : 'Não liberada'}
-                        </span>
-                      </div>
-                      <h2>{provider}</h2>
-                      <p>
-                        {enabled
-                          ? 'Integração disponível para esta operação.'
-                          : 'A liberação é gerenciada pelo administrador.'}
-                      </p>
-                      {admin ? (
-                        <label className="gt-toggle">
-                          <input
-                            type="checkbox"
-                            checked={enabled}
-                            disabled={
-                              busy ||
-                              (!enabled &&
-                                !(
-                                  session.state.settings?.enabledProviders ||
-                                  providers
-                                ).includes(provider))
-                            }
-                            onChange={(e) =>
-                              void save('tenant', {
-                                ...tenant,
-                                connections: e.target.checked
-                                  ? [...tenant.connections, provider]
-                                  : tenant.connections.filter(
-                                      (p) => p !== provider,
-                                    ),
-                              })
-                            }
-                          />
-                          <span>Liberar acesso</span>
-                        </label>
-                      ) : (
-                        <div className="gt-connection-footer">
-                          {enabled ? (
-                            <Check size={16} />
-                          ) : (
-                            <ShieldCheck size={16} />
-                          )}
-                          {enabled
-                            ? 'Pronta para usar'
-                            : 'Solicite acesso ao administrador'}
-                        </div>
-                      )}
-                      {!admin && enabled && (
-                        <a
-                          className="gt-button"
-                          href={`/prototipo/app?tenant=${tenant.id}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Abrir plataforma <ArrowUpRight size={16} />
-                        </a>
-                      )}
-                    </article>
-                  );
-                })}
-              </div>
-            </>
-          )}
-          {managing && view === 'overview' && (
-            <TenantOverview
-              tenant={tenant}
-              records={(session.state.billing || []).filter(
-                (r) => r.tenantId === tenant.id,
-              )}
-              onPayments={() => navigate('payments')}
-            />
-          )}
-          {managing && view === 'payments' && (
-            <AdminPayments
-              tenants={[tenant]}
-              records={(session.state.billing || []).filter(
-                (r) => r.tenantId === tenant.id,
-              )}
-              busy={busy}
               onSave={(v) => save('billing', v)}
-              defaultPlan={session.state.settings?.defaultPlan}
             />
           )}
-          {tenant && view === 'platform' && (
-            <PlatformEditor
-              key={tenant.id}
-              tenant={tenant}
+          {view === 'support' && (
+            <SupportCenter
+              admin={!!admin}
+              tickets={session.state.tickets || []}
+              tenants={tenants}
+              telegram={session.state.settings?.telegramUrl}
               busy={busy}
-              onSave={(value) =>
-                save('applicationBranding', { id: tenant.id, ...value })
-              }
+              onSave={save}
+              onDeliver={deliver}
             />
           )}
           {view === 'settings' && (
             <>
-              {managing ? (
-                <TenantAccess
-                  key={tenant.id}
-                  tenant={tenant}
+              <AccountSettings email={session.email} onSaved={load} />
+              {admin && (
+                <AdminSettings
+                  key={session.revision}
+                  settings={session.state.settings}
                   busy={busy}
-                  onSave={(value) => save('tenant', value)}
+                  onSave={(v) => save('settings', v)}
                 />
-              ) : (
-                <>
-                  {admin && (
-                    <AdminSettings
-                      key={session.revision}
-                      settings={session.state.settings}
-                      busy={busy}
-                      onSave={(v) => save('settings', v)}
-                    />
-                  )}
-                  <AccountSettings email={session.email} onSaved={load} />
-                </>
               )}
             </>
           )}
+          {!admin && tenant && view === 'platform' && (
+            <PlatformEditor
+              key={tenant.id}
+              tenant={tenant}
+              busy={busy}
+              onSave={(v) =>
+                save('applicationBranding', { id: tenant.id, ...v })
+              }
+            />
+          )}
+          {!admin && tenant && view === 'connections' && (
+            <div className="gt-connection-grid">
+              {catalog.map((p) => {
+                const enabled = tenant.connections.includes(p);
+                return (
+                  <section className="gt-card gt-connection" key={p}>
+                    <div className="gt-connection-top">
+                      <span className="gt-provider-icon">
+                        <Plug size={24} />
+                      </span>
+                      <span
+                        className={`gt-status ${enabled ? 'is-active' : ''}`}
+                      >
+                        {enabled ? 'Liberada' : 'Não liberada'}
+                      </span>
+                    </div>
+                    <h2>{p}</h2>
+                    <p>
+                      {enabled
+                        ? 'Disponível para sua plataforma.'
+                        : 'Solicite a liberação ao administrador pelo suporte.'}
+                    </p>
+                    {enabled ? (
+                      <a
+                        className="gt-button"
+                        target="_blank"
+                        rel="noreferrer"
+                        href={`/prototipo/app?tenant=${tenant.id}`}
+                      >
+                        Abrir plataforma
+                        <ArrowUpRight size={16} />
+                      </a>
+                    ) : (
+                      <button
+                        className="gt-button"
+                        onClick={() => navigate('support')}
+                      >
+                        Solicitar acesso
+                      </button>
+                    )}
+                  </section>
+                );
+              })}
+              {!catalog.length && (
+                <p className="gt-admin-placeholder">
+                  O administrador ainda não disponibilizou conexões.
+                </p>
+              )}
+            </div>
+          )}
         </main>
       </div>
-      <Dialog
+      <PurchaseLinkModal
+        demoSample={demoSample}
         open={creating}
-        onOpenChange={(open) => {
-          if (!busy) setCreating(open);
-        }}
-      >
-        <DialogContent className="gt-dialog">
-          <DialogHeader>
-            <DialogTitle>Novo tenant</DialogTitle>
-            <DialogDescription>
-              Cadastre a operação e o responsável pelo acesso.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="gt-form"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setCreationError('');
-              try {
-                const value = {
-                  ...createApplication(
-                    { name: newName, color: '#96d600' },
-                    session.state.tenants,
-                  ),
-                  admin: newAdmin.trim(),
-                  email: newEmail.trim().toLowerCase(),
-                };
-                if (await save('tenant', value)) {
-                  setCreating(false);
-                  setNewName('');
-                  setNewAdmin('');
-                  setNewEmail('');
-                  openTenant(value);
-                  setNotice(
-                    'Tenant criado. Gere um convite em Acesso para liberar o responsável.',
-                  );
-                }
-              } catch (err) {
-                setCreationError((err as Error).message);
-              }
-            }}
-          >
-            <label>
-              Nome da operação
-              <input
-                required
-                maxLength={100}
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Ex.: Alpha Trade"
-              />
-            </label>
-            <label>
-              Nome do responsável
-              <input
-                required
-                maxLength={100}
-                value={newAdmin}
-                onChange={(e) => setNewAdmin(e.target.value)}
-                placeholder="Nome e sobrenome"
-              />
-            </label>
-            <label>
-              E-mail do responsável
-              <input
-                required
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="responsavel@empresa.com"
-              />
-            </label>
-            {(creationError || error) && (
-              <p className="gt-form-error" role="alert">
-                {creationError || error}
-              </p>
-            )}
-            <div className="gt-form-actions">
-              <button
-                type="button"
-                className="gt-button"
-                disabled={busy}
-                onClick={() => setCreating(false)}
-              >
-                Cancelar
-              </button>
-              <button className="gt-button gt-primary" disabled={busy}>
-                {busy ? 'Criando…' : 'Criar tenant'}
-                <Plus size={16} />
-              </button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+        onClose={() => setCreating(false)}
+        busy={busy}
+        link={
+          session.state.purchaseLinks?.[0]?.id !== linkBaseline
+            ? session.state.purchaseLinks?.[0]
+            : undefined
+        }
+        amountCents={session.state.settings?.tenantPriceCents || 300000}
+        onGenerate={() => save('purchaseLink', {})}
+      />
     </div>
   );
 }
@@ -947,6 +535,8 @@ function PlatformEditor({
     secondaryColor: string;
     domain?: string;
     logo?: string;
+    checkoutPriceCents?: number;
+    webhook?: string;
   }) => Promise<boolean>;
 }) {
   const [name, setName] = useState(tenant.name);
@@ -955,6 +545,10 @@ function PlatformEditor({
   const [error, setError] = useState('');
   const [domain, setDomain] = useState(tenant.domain || '');
   const [logo, setLogo] = useState(tenant.logo || '');
+  const [checkoutPrice, setCheckoutPrice] = useState(
+    (tenant.checkoutPriceCents || 300000) / 100,
+  );
+  const [webhook, setWebhook] = useState(tenant.webhook || '');
   const [uploading, setUploading] = useState(false);
   const [logoSource, setLogoSource] = useState('');
   useEffect(
@@ -967,8 +561,18 @@ function PlatformEditor({
     name !== tenant.name ||
     color !== tenant.color ||
     domain !== (tenant.domain || '') ||
+    Math.round(checkoutPrice * 100) !== (tenant.checkoutPriceCents || 300000) ||
+    webhook !== (tenant.webhook || '') ||
     logo !== (tenant.logo || '');
-  const brand = { name, color, secondaryColor, domain, logo };
+  const brand = {
+    name,
+    color,
+    secondaryColor,
+    domain,
+    logo,
+    checkoutPriceCents: Math.round(checkoutPrice * 100),
+    webhook,
+  };
   return (
     <div className="gt-platform-grid gt-platform-stacked">
       <section className="gt-card gt-editor">
@@ -1022,7 +626,6 @@ function PlatformEditor({
               />
             </div>
             <div className="gt-platform-logo">
-              {' '}
               <label>
                 Logo
                 <input
@@ -1071,6 +674,32 @@ function PlatformEditor({
                   </button>
                 </div>
               )}
+              <label>
+                Valor do checkout (R$)
+                <input
+                  required
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max="1000000"
+                  value={checkoutPrice}
+                  onChange={(e) => setCheckoutPrice(Number(e.target.value))}
+                />
+              </label>
+              <label>
+                Webhook
+                <input
+                  type="url"
+                  placeholder="https://seu-servico.com/webhook"
+                  value={webhook}
+                  onChange={(e) => setWebhook(e.target.value)}
+                  maxLength={2048}
+                />
+              </label>
+              <small className="gt-muted">
+                O endereço fica salvo para a futura integração. Nenhum evento é
+                enviado nesta amostra.
+              </small>
             </div>
           </div>
           {error && (
@@ -1130,126 +759,6 @@ function PlatformEditor({
     </div>
   );
 }
-function TenantAccess({
-  tenant,
-  busy,
-  onSave,
-}: {
-  tenant: Tenant;
-  busy: boolean;
-  onSave: (tenant: Tenant) => Promise<boolean>;
-}) {
-  const [admin, setAdmin] = useState(tenant.admin);
-  const [email, setEmail] = useState(tenant.email);
-  const [confirmSuspend, setConfirmSuspend] = useState(false);
-  return (
-    <div className="gt-settings-grid">
-      <section className="gt-card gt-editor">
-        <h2>Acesso do tenant</h2>
-        <p className="gt-muted">Dados do responsável pela operação.</p>
-        <form
-          className="gt-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void onSave({
-              ...tenant,
-              admin: admin.trim(),
-              email: email.trim().toLowerCase(),
-            });
-          }}
-        >
-          <label>
-            Nome do responsável
-            <input
-              required
-              value={admin}
-              onChange={(e) => setAdmin(e.target.value)}
-            />
-          </label>
-          <label>
-            E-mail do responsável
-            <input
-              required
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
-          <button
-            className="gt-button gt-primary"
-            disabled={
-              busy ||
-              (admin.trim() === tenant.admin &&
-                email.trim().toLowerCase() === tenant.email)
-            }
-          >
-            Salvar responsável
-          </button>
-        </form>
-        <AccountInvite key={tenant.email} tenantId={tenant.id} />
-      </section>
-      <section className="gt-card gt-editor">
-        <h2>Status da operação</h2>
-        <p className="gt-muted">
-          Suspender bloqueia o acesso do tenant e a abertura da plataforma.
-        </p>
-        <span
-          className={`gt-status ${tenant.status === 'active' ? 'is-active' : ''}`}
-        >
-          {tenant.status === 'active' ? 'Ativa' : 'Suspensa'}
-        </span>
-        <button
-          className="gt-button gt-status-action"
-          disabled={busy}
-          onClick={() =>
-            tenant.status === 'active'
-              ? setConfirmSuspend(true)
-              : void onSave({
-                  ...tenant,
-                  status: 'active',
-                })
-          }
-        >
-          {tenant.status === 'active' ? 'Suspender tenant' : 'Reativar tenant'}
-        </button>
-        <p className="gt-muted">
-          Cadastrado em {new Date(tenant.created).toLocaleDateString('pt-BR')}
-        </p>
-      </section>
-      <Dialog open={confirmSuspend} onOpenChange={setConfirmSuspend}>
-        <DialogContent className="gt-dialog">
-          <DialogHeader>
-            <DialogTitle>Suspender {tenant.name}?</DialogTitle>
-            <DialogDescription>
-              O responsável perderá o acesso e a plataforma ficará indisponível.
-              Você pode reativar depois.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="gt-form-actions">
-            <button
-              className="gt-button"
-              disabled={busy}
-              onClick={() => setConfirmSuspend(false)}
-            >
-              Cancelar
-            </button>
-            <button
-              className="gt-button gt-danger"
-              disabled={busy}
-              onClick={async () => {
-                if (await onSave({ ...tenant, status: 'suspended' }))
-                  setConfirmSuspend(false);
-              }}
-            >
-              Confirmar suspensão
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
 function AccountSettings({
   email,
   onSaved,

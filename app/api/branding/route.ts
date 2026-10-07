@@ -11,12 +11,12 @@ export async function GET(request: Request) {
     return Response.json(
       {
         id: 'default',
-        name: 'Gotrade',
-        color: '#96d600',
+        name: 'GoTrade',
+        color: '#237a4b',
         secondaryColor: '#ffffff',
         font: 'Inter',
-        logo: '',
-        favicon: '',
+        logo: '/brand/gotrade-logo.svg',
+        favicon: '/brand/gotrade-icon.png',
         darkMode: true,
         loginTemplate: 'split',
       },

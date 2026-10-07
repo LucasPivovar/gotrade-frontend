@@ -47,3 +47,11 @@ A plataforma nasce junto com o tenant. O formulário Plataforma permite domínio
 O admin concentra a gestão na lista de tenants, com filtros de ativos, suspensos e sem domínio cadastrado. A busca inclui nome, responsável, e-mail e domínio. Cada tenant mostra suas conexões habilitadas e oferece acesso direto à plataforma ou ao responsável. Suspensão pede confirmação e pode ser revertida; convites continuam válidos por 24 horas. O domínio exibido representa somente o cadastro, sem confirmação de DNS.
 
 O admin agora organiza a lista de tenants sem cards clicáveis. A visão individual reúne acompanhamento e histórico de pagamentos. Usuários foi removido do menu. Configurações permite escolher provedores do catálogo, e-mail de suporte e plano sugerido. A amostra adiciona tenants e pagamentos fictícios uma única vez, preservando os dados existentes; a inicialização de produção não recebe esses exemplos.
+
+## Administração e contratação
+
+O menu de três pontos abre o modal do tenant com plataforma, clientes demonstrativos, pagamentos, status e conexões permitidas. Configurações reúne Minha conta, catálogo de conexões e preferências administrativas. O preço administrativo é registrado em cada link público `/contratar/[token]`; alterações posteriores não mudam links existentes. A contratação é uma apresentação: não cobra, não provisiona plataforma nem envia credenciais. Esses passos dependem da futura integração do backend.
+
+Na plataforma do tenant, o valor do checkout e webhook HTTPS são salvos; não há disparo de webhook nesta etapa. A prévia é uma imagem estática. Tickets são isolados por tenant; o admin pode responder e encerrar. Para envio real de respostas, configure `RESEND_API_KEY` e `SUPPORT_EMAIL_FROM` com remetente verificado no Resend. Sem configuração ou com `DEMO_MODE=true`, a resposta é salva com envio pendente. O Telegram é configurado nas preferências administrativas. Nunca use o modo público de demonstração com dados reais.
+
+No modo demonstrativo, o link inclui o valor na URL apenas para renderizar a apresentação mesmo se o armazenamento temporário reiniciar. Esse valor não autoriza cobranças. Fora de `DEMO_MODE`, a rota ignora o parâmetro e busca o preço exclusivamente pelo registro do link no banco.

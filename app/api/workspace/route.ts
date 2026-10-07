@@ -61,7 +61,72 @@ export async function POST(request: Request) {
         },
         { status: 409 },
       );
-    if (body.action === 'billing') {
+    if (body.action === 'purchaseLink') {
+      if (w.role !== 'admin') throw Error('FORBIDDEN');
+      s.purchaseLinks = [
+        {
+          id: crypto.randomUUID(),
+          amountCents: s.settings?.tenantPriceCents || 300000,
+          created: new Date().toISOString(),
+        },
+        ...(s.purchaseLinks || []),
+      ].slice(0, 100);
+      event = 'Gerou um link de contratação';
+    } else if (body.action === 'ticket') {
+      const v = body.value;
+      const tenant = s.tenants.find(
+        (t) => t.id === (w.role === 'tenant' ? w.tenantId : v?.tenantId),
+      );
+      if (!tenant) throw Error('FORBIDDEN');
+      if (
+        typeof v?.subject !== 'string' ||
+        !v.subject.trim() ||
+        v.subject.length > 120 ||
+        typeof v.message !== 'string' ||
+        !v.message.trim() ||
+        v.message.length > 4000
+      )
+        throw Error('Informe assunto e mensagem válidos.');
+      s.tickets = [
+        {
+          id: crypto.randomUUID(),
+          tenantId: tenant.id,
+          subject: v.subject.trim(),
+          message: v.message.trim(),
+          created: new Date().toISOString(),
+          status: 'open',
+          replies: [],
+        },
+        ...(s.tickets || []),
+      ];
+      event = 'Criou um ticket de suporte';
+    } else if (body.action === 'ticketReply') {
+      if (w.role !== 'admin') throw Error('FORBIDDEN');
+      const v = body.value;
+      const ticket = s.tickets?.find((t) => t.id === v?.id);
+      if (!ticket) throw Error('Ticket não encontrado.');
+      if (
+        typeof v.message !== 'string' ||
+        !v.message.trim() ||
+        v.message.length > 4000
+      )
+        throw Error('Informe uma resposta válida.');
+      ticket.replies.push({
+        id: crypto.randomUUID(),
+        message: v.message.trim(),
+        created: new Date().toISOString(),
+        emailStatus: 'pending',
+      });
+      ticket.status = 'answered';
+      event = 'Respondeu um ticket';
+    } else if (body.action === 'ticketStatus') {
+      if (w.role !== 'admin') throw Error('FORBIDDEN');
+      const ticket = s.tickets?.find((t) => t.id === body.value?.id);
+      if (!ticket || !['open', 'closed'].includes(body.value.status))
+        throw Error('Ticket inválido.');
+      ticket.status = body.value.status;
+      event = 'Atualizou a situação de um ticket';
+    } else if (body.action === 'billing') {
       if (w.role !== 'admin') throw Error('FORBIDDEN');
       validateBilling(body.value);
       const record = body.value;
@@ -187,9 +252,14 @@ export async function POST(request: Request) {
         typeof v.supportEmail !== 'string' ||
         (v.supportEmail &&
           !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.supportEmail)) ||
-        typeof v.defaultPlan !== 'string' ||
-        !v.defaultPlan.trim() ||
-        v.defaultPlan.length > 80
+        !Number.isSafeInteger(v.tenantPriceCents) ||
+        v.tenantPriceCents <= 0 ||
+        v.tenantPriceCents > 100000000 ||
+        typeof v.telegramUrl !== 'string' ||
+        (v.telegramUrl !== '' &&
+          !/^https:\/\/(t\.me|telegram\.me)\/[a-zA-Z0-9_]{5,}$/.test(
+            v.telegramUrl,
+          ))
       )
         throw Error('Configurações inválidas.');
       s.settings = {
@@ -197,7 +267,8 @@ export async function POST(request: Request) {
         ...s.settings,
         enabledProviders: [...new Set(v.enabledProviders)] as string[],
         supportEmail: v.supportEmail.trim(),
-        defaultPlan: v.defaultPlan.trim(),
+        tenantPriceCents: v.tenantPriceCents,
+        telegramUrl: v.telegramUrl.trim(),
       };
       event = 'Atualizou as configurações globais da plataforma';
     } else throw Error('Ação desconhecida.');
