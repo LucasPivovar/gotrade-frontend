@@ -252,7 +252,7 @@ export default function Panel({
         )}
         {managing && (
           <button
-            className="gt-back"
+            className="gt-signout"
             onClick={() => {
               setSelectedId('');
               navigate('connections', '');
@@ -323,7 +323,7 @@ export default function Panel({
             disabled={busy}
             onClick={() => void logout()}
           >
-            <LogOut size={17} />
+            <LogOut size={20} />
             Sair da conta
           </button>
         </div>
@@ -333,7 +333,10 @@ export default function Panel({
           {managing ? <span>Tenants / {tenant.name}</span> : <span />}
           <button
             className="gt-profile"
-            onClick={() => navigate('settings')}
+            onClick={() => {
+              if (admin) setSelectedId('');
+              navigate('settings', admin ? '' : selectedId);
+            }}
             aria-label="Meu perfil"
           >
             <UserRound size={18} />
@@ -509,6 +512,39 @@ export default function Panel({
                         ? 'Tente outro termo ou limpe os filtros.'
                         : 'Cadastre um tenant para liberar o acesso à sua plataforma.'}
                     </p>
+                    {!search && statusFilter === 'all' && (
+                      <ol className="gt-admin-steps">
+                        <li>
+                          <span>1</span>
+                          <div>
+                            <strong>Cadastre o responsável</strong>
+                            <p>
+                              Informe o nome da plataforma e o e-mail de quem
+                              vai gerenciar.
+                            </p>
+                          </div>
+                        </li>
+                        <li>
+                          <span>2</span>
+                          <div>
+                            <strong>Libere o acesso</strong>
+                            <p>
+                              Gere um convite para o responsável criar a senha.
+                            </p>
+                          </div>
+                        </li>
+                        <li>
+                          <span>3</span>
+                          <div>
+                            <strong>Acompanhe a plataforma</strong>
+                            <p>
+                              Gerencie conexões, personalização e status em um
+                              só lugar.
+                            </p>
+                          </div>
+                        </li>
+                      </ol>
+                    )}
                     {search || statusFilter !== 'all' ? (
                       <button
                         className="gt-button"
@@ -670,7 +706,7 @@ export default function Panel({
                   setNewEmail('');
                   openTenant(value);
                   setNotice(
-                    'Tenant criado. Gere um convite em Configurações para liberar o acesso.',
+                    'Tenant criado. Gere um convite em Acesso para liberar o responsável.',
                   );
                 }
               } catch (err) {
