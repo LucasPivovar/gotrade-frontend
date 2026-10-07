@@ -2,15 +2,13 @@
 
 Importe o repositório LucasPivovar/gotrade-frontend e selecione Next.js. A raiz do projeto é a raiz do repositório. Use Node.js 24, instalação npm ci e build npm run build. Não configure exportação estática nem uma reescrita universal para index.html.
 
-## Variáveis obrigatórias
+## Amostra pública (configuração atual)
 
-- TURSO_DATABASE_URL: URL libsql:// de um banco Turso remoto.
-- TURSO_AUTH_TOKEN: token desse banco (somente servidor).
-- ADMIN_EMAIL: e-mail do administrador inicial.
-- ADMIN_PASSWORD: senha inicial de 12 a 128 caracteres. A criação não redefine senhas de contas existentes.
-- DEMO_MODE: false. O modo compartilhado de demonstração é bloqueado em VERCEL_ENV=production.
+vercel.json ativa DEMO_MODE=true. Qualquer pessoa pode abrir o painel ou entrar na demonstração com os campos vazios, sem credenciais ou configuração de banco remoto. O botão de perfis permite experimentar admin e tenant. Os dados são demonstrativos, compartilhados e temporários; podem reiniciar entre instâncias da Vercel.
 
-Não use banco file: na Vercel. Não exponha essas variáveis com NEXT_PUBLIC_. Um banco ausente ou indisponível gera uma resposta recuperável, não um workspace compartilhado nem sucesso fictício.
+## Quando usar dados reais
+
+Desative DEMO_MODE antes de conectar clientes reais. Configure TURSO_DATABASE_URL (libsql://), TURSO_AUTH_TOKEN, ADMIN_EMAIL e ADMIN_PASSWORD (12 a 128 caracteres). Não use banco file: para dados reais na Vercel, nem prefixos NEXT_PUBLIC_ para segredos.
 
 ## Rotas e recuperação
 

@@ -64,4 +64,4 @@ Verificações: `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`
 
 ## Publicação e Vercel
 
-Destino autorizado: LucasPivovar/gotrade-frontend. Consulte docs/DEPLOY.md para as variáveis obrigatórias e os fallbacks. O modo de demonstração compartilhado está bloqueado em produção. O backup antigo foi desativado e tenants não recebem atividade de outras operações. As APIs principais tratam banco indisponível com 503; páginas de sessão exibem recuperação. As rotas internas do protótipo e a inclusão dos assets no pacote de produção foram verificadas.
+Destino autorizado: LucasPivovar/gotrade-frontend. Consulte docs/DEPLOY.md para as variáveis obrigatórias e os fallbacks. A publicação atual é uma amostra pública com DEMO_MODE=true, sem credenciais. Desative esse modo ao conectar dados reais. O backup antigo foi desativado e tenants não recebem atividade de outras operações. As APIs principais tratam banco indisponível com 503; páginas de sessão exibem recuperação. As rotas internas do protótipo e a inclusão dos assets no pacote de produção foram verificadas.

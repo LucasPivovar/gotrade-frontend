@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     );
     return Response.json(
       {
-        error: 'Não foi possível entrar. Verifique a configuração do servidor.',
+        error: 'Não foi possível entrar agora. Tente novamente em instantes.',
       },
       { status: 503 },
     );

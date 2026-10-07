@@ -33,3 +33,7 @@ npm run test:e2e
 ```
 
 Playwright usa a porta 5174 e banco independente. Capturas em `outputs/`. Consulte [IMPLEMENTACAO-GOTRADE.md](IMPLEMENTACAO-GOTRADE.md) para arquitetura, decisões e continuidade.
+
+## Amostra pública
+
+A configuração da Vercel ativa DEMO_MODE=true: acesso livre, sem senha ou Turso. Os dados são demonstrativos e temporários. Para um ambiente real, desative DEMO_MODE e siga docs/DEPLOY.md.
