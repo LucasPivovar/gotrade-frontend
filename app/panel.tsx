@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import AccountInvite from '@/components/account-invite';
 import PlatformPreview from '@/components/platform-preview';
+import LogoEditor from '@/components/logo-editor';
 import { providers, type Session, type Tenant } from '@/lib/model';
 import { createApplication, validateApplicationBrand } from '@/lib/application';
 import { applyBrandTheme } from '@/lib/brand-theme';
@@ -214,9 +215,6 @@ export default function Panel({
     <div className="gt-shell">
       <aside className="gt-sidebar">
         <Link href="/" className="gt-brand">
-          <span className="gt-brand-icon">
-            <Zap size={21} fill="currentColor" />
-          </span>
           <strong>Gotrade</strong>
         </Link>
         <span className="gt-workspace-label">
@@ -704,6 +702,13 @@ function PlatformEditor({
   const [domain, setDomain] = useState(tenant.domain || '');
   const [logo, setLogo] = useState(tenant.logo || '');
   const [uploading, setUploading] = useState(false);
+  const [logoSource, setLogoSource] = useState('');
+  useEffect(
+    () => () => {
+      if (logoSource) URL.revokeObjectURL(logoSource);
+    },
+    [logoSource],
+  );
   const dirty =
     name !== tenant.name ||
     color !== tenant.color ||
@@ -711,7 +716,7 @@ function PlatformEditor({
     logo !== (tenant.logo || '');
   const brand = { name, color, secondaryColor, domain, logo };
   return (
-    <div className="gt-platform-grid">
+    <div className="gt-platform-grid gt-platform-stacked">
       <section className="gt-card gt-editor">
         <form
           className="gt-form"
@@ -734,109 +739,140 @@ function PlatformEditor({
           <p className="gt-muted">
             Sua plataforma já está pronta. Personalize abaixo.
           </p>
-          <label>
-            Domínio
-            <input
-              placeholder="plataforma.com.br"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              maxLength={253}
-            />
-          </label>
-          <p className="gt-muted">
-            O domínio ficará salvo. A conexão com a hospedagem ainda não está
-            disponível nesta amostra.
-          </p>
-          <label>
-            Logo
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              disabled={uploading || busy}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setUploading(true);
-                setError('');
-                try {
-                  const form = new FormData();
-                  form.set('file', file);
-                  form.set('tenantId', tenant.id);
-                  const response = await fetch('/api/media', {
-                    method: 'POST',
-                    body: form,
-                  });
-                  const data = await response.json();
-                  if (!response.ok)
-                    throw Error(
-                      data.error || 'Não foi possível enviar a logo.',
-                    );
-                  setLogo(data.url);
-                } catch (err) {
-                  setError((err as Error).message);
-                } finally {
-                  setUploading(false);
-                  e.target.value = '';
-                }
-              }}
-            />
-          </label>
-          <small className="gt-muted">
-            PNG, JPG ou WebP, até 400 KB. Prefira uma logo horizontal.
-          </small>
-          {uploading && <output>Enviando logo…</output>}
-          {logo && (
-            <div>
-              <img
-                src={logo}
-                alt="Logo da plataforma"
-                style={{ maxWidth: 200, maxHeight: 60, objectFit: 'contain' }}
+          <div className="gt-platform-fields">
+            <div className="gt-platform-details">
+              <label>
+                Domínio
+                <input
+                  placeholder="plataforma.com.br"
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  maxLength={253}
+                />
+              </label>
+
+              <label>
+                Nome da plataforma
+                <input
+                  required
+                  maxLength={100}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nome da sua plataforma"
+                />
+              </label>
+              <ColorField
+                label="Cor principal"
+                value={color}
+                onChange={setColor}
               />
-              <button
-                type="button"
-                className="gt-back"
-                onClick={() => setLogo('')}
-              >
-                Remover logo
-              </button>
             </div>
-          )}
-          <label>
-            Nome da plataforma
-            <input
-              required
-              maxLength={100}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nome da sua plataforma"
-            />
-          </label>
-          <ColorField label="Cor principal" value={color} onChange={setColor} />
+            <div className="gt-platform-logo">
+              {' '}
+              <label>
+                Logo
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  disabled={uploading || busy}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (!file) return;
+                    setError('');
+                    if (
+                      !['image/png', 'image/jpeg', 'image/webp'].includes(
+                        file.type,
+                      ) ||
+                      file.size > 5 * 1024 * 1024
+                    ) {
+                      setError('Use PNG, JPG ou WebP com até 5 MB.');
+                      return;
+                    }
+                    setLogoSource(URL.createObjectURL(file));
+                  }}
+                />
+              </label>
+              <small className="gt-muted">
+                PNG, JPG ou WebP, até 5 MB. Recorte a logo antes de enviar.
+              </small>
+              {uploading && <output>Enviando logo…</output>}
+              {logo && (
+                <div>
+                  <img
+                    src={logo}
+                    alt="Logo da plataforma"
+                    style={{
+                      maxWidth: 200,
+                      maxHeight: 60,
+                      objectFit: 'contain',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="gt-back"
+                    onClick={() => setLogo('')}
+                  >
+                    Remover logo
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
           {error && (
             <p role="alert" className="gt-form-error">
               {error}
             </p>
           )}
-          <button
-            className="gt-button gt-primary"
-            disabled={busy || uploading || !dirty}
-          >
-            {busy ? 'Salvando…' : 'Salvar alterações'}
-          </button>
-          {tenant.status === 'active' && (
-            <a
-              className="gt-button"
-              href={`/prototipo?tenant=${tenant.id}`}
-              target="_blank"
-              rel="noreferrer"
+          <div className="gt-platform-actions">
+            <button
+              className="gt-button gt-primary"
+              disabled={busy || uploading || !dirty}
             >
-              Abrir plataforma
-              <ArrowUpRight size={16} />
-            </a>
-          )}
+              {busy ? 'Salvando…' : 'Salvar alterações'}
+            </button>
+            {tenant.status === 'active' && (
+              <a
+                className="gt-button"
+                href={`/prototipo?tenant=${tenant.id}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Abrir plataforma
+                <ArrowUpRight size={16} />
+              </a>
+            )}
+          </div>
         </form>
       </section>
       <PlatformPreview tenantId={tenant.id} brand={brand} />
+      {logoSource && (
+        <LogoEditor
+          key={logoSource}
+          source={logoSource}
+          busy={uploading}
+          onClose={() => setLogoSource('')}
+          onApply={async (file) => {
+            setUploading(true);
+            try {
+              const form = new FormData();
+              form.set('file', file);
+              form.set('tenantId', tenant.id);
+              const response = await fetch('/api/media', {
+                method: 'POST',
+                body: form,
+              });
+              const data = await response.json();
+              if (!response.ok)
+                throw Error(data.error || 'Não foi possível enviar a logo.');
+              setLogo(data.url);
+              setLogoSource('');
+            } finally {
+              setUploading(false);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

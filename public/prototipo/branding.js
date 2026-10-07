@@ -33,7 +33,9 @@
     if (!style) { style = document.createElement('style'); style.id = 'whitelabel-brand-styles'; document.head.appendChild(style); }
     style.textContent = `
       .topbar-market-right{display:flex;align-items:center;gap:12px}.gotrade-account-toggle button{min-width:36px;height:34px;border:1px solid #ffffff26;border-radius:9px;background:#ffffff08;color:#c5d0c1;font-weight:700;cursor:pointer}.gotrade-account-toggle button:disabled{opacity:.5;cursor:not-allowed}.gotrade-account-toggle [role=alert]{font-size:11px;max-width:160px}
-      .gotrade-trading-area{--lime:#96d600;--lime-dim:#79ae00;--brand-primary:#96d600;--brand-accent:#a3e635;--brand-rgb:150,214,0;--brand-hover:#79ae00;--brand-on-primary:#191919;--brand-on-hover:#191919;--brand-subtle:rgba(150,214,0,.12)}
+      .gotrade-trading-area{--lime:var(--brand-accent);--lime-dim:var(--brand-hover)}
+      .topbar-stat-item .mono{color:var(--positive)!important}
+      .gotrade-trading-area button[style*="var(--lime)"],.gotrade-trading-area button[style*="var(--brand-accent)"]{background:var(--brand-subtle)!important;border:1px solid color-mix(in srgb,var(--brand-accent) 40%,transparent)!important;color:var(--brand-accent)!important}
       .btn-lime,.hero-primary,.tour-button{background:var(--brand-primary)!important;color:var(--brand-on-primary)!important}
       .btn-lime:hover{background:var(--brand-hover)!important;color:var(--brand-on-hover)!important}
       .lime,.brand-accent,.history-eyebrow,.badge-demo,.tabbar a.active{color:var(--brand-accent)!important}

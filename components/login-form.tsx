@@ -8,7 +8,6 @@ import {
   ArrowUpRight,
   Eye,
   EyeOff,
-  Zap,
   Activity,
   Check,
 } from '@/components/icons';
@@ -245,9 +244,7 @@ function TemplateSplit({
                 borderRadius: 10,
               }}
             />
-          ) : (
-            <Zap fill="currentColor" />
-          )}
+          ) : null}
           <span className="login-brand-name">{branding.name}</span>
         </Link>
         <div className="login-intro-copy">

@@ -89,7 +89,7 @@ test('admin manages tenants, edits platform identity and reloads saved data', as
   const preview = page.frameLocator('iframe[title="Prévia do protótipo"]');
   await expect(preview.locator('canvas').first()).toBeVisible();
   await expect(
-    preview.getByText('Atualizada', { exact: true }).first(),
+    preview.getByText('Alpha Atualizada', { exact: true }).first(),
   ).toBeVisible();
   await expect
     .poll(async () =>

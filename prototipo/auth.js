@@ -28,7 +28,7 @@
     const link = (label, path) => h('a', { href: '/prototipo' + path, onClick: (event) => { event.preventDefault(); go(path); } }, label);
     const icon = () => h('span', { className: 'tp-auth-icon', 'aria-hidden': true }, symbol('lightning-charge-fill', 24));
     const brandHeader = h('div', { className: 'tp-auth-brand' },
-      brand.logo ? h('img', { src: brand.logo, alt: brand.name || 'Gotrade', style:{maxWidth:220,maxHeight:60,objectFit:'contain'} }) : icon(),
+      brand.logo ? h('img', { src: brand.logo, alt: brand.name || 'Gotrade', style:{maxWidth:220,maxHeight:60,objectFit:'contain'} }) : null,
       !brand.logo && (skeleton ? bar('160px', 'heading') : h('strong', {}, brand.name || 'Gotrade')));
     const input = (label, type, value, setter, autocomplete) => h('label', { className: 'tp-auth-field' }, h('span', {}, label),
       h('input', { type, value, autoComplete: autocomplete, placeholder: type === 'email' ? 'voce@email.com' : 'Sua senha', onChange: (event) => setter(event.target.value) }));

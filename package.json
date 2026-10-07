@@ -14,7 +14,7 @@
     "start": "next start --hostname 127.0.0.1 --port 5173",
     "setup": "node scripts/setup.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/design.test.ts tests/branding.test.ts tests/application.test.ts",
+    "test": "node --import tsx --test tests/design.test.ts tests/branding.test.ts tests/application.test.ts tests/logo-image.test.ts",
     "test:e2e": "playwright test",
     "lint": "oxlint",
     "format": "oxfmt",

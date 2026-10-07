@@ -173,7 +173,7 @@ void test('prototype bundle files contain reactive WlHeroBrand, ht and WlSplashW
     assert.ok(c.includes('function ht({size:t=26})'), `${name} bundle must define ht`);
     assert.ok(c.includes('WlHeroBrand'), `${name} bundle must use WlHeroBrand`);
     assert.ok(c.includes('WlSplashWord'), `${name} bundle must use WlSplashWord`);
-    assert.ok(c.includes('_b.favicon'), `${name} bundle must support fallback to favicon in ht`);
+    assert.ok(c.includes('gotrade-platform-brand'), `${name} bundle must render the tenant logo or plain brand name`);
   }
 });
 
