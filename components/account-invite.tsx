@@ -8,15 +8,16 @@ export default function AccountInvite({ tenantId }: { tenantId: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="account-invite">
-      <h3>Acesso do administrador</h3>
+      <h3>Convite para o responsável</h3>
       <p>Convite válido por 24 horas para criar uma senha.</p>
       <button
         type="button"
-        className="secondary"
+        className="gt-button"
         disabled={busy}
         onClick={async () => {
           setBusy(true);
           setError('');
+          setCopied(false);
           try {
             const r = await fetch('/api/auth/invite', {
               method: 'POST',

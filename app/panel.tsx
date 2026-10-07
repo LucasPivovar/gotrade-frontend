@@ -54,6 +54,9 @@ export default function Panel({
       : 'connections',
   );
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'active' | 'suspended' | 'pending'
+  >('all');
   const [creating, setCreating] = useState(false);
   const [creationError, setCreationError] = useState('');
   const [newName, setNewName] = useState('');
@@ -206,9 +209,17 @@ export default function Panel({
       ? view === 'settings'
         ? 'Configurações'
         : 'Tenants'
-      : sections.find((s) => s.id === view)?.label || 'Conexões';
-  const filtered = session.state.tenants.filter((t) =>
-    `${t.name} ${t.email}`.toLowerCase().includes(search.toLowerCase()),
+      : admin && view === 'settings'
+        ? 'Acesso'
+        : sections.find((s) => s.id === view)?.label || 'Conexões';
+  const tenants = session.state.tenants;
+  const filtered = tenants.filter(
+    (t) =>
+      `${t.name} ${t.admin} ${t.email} ${t.domain}`
+        .toLowerCase()
+        .includes(search.trim().toLowerCase()) &&
+      (statusFilter === 'all' ||
+        (statusFilter === 'pending' ? !t.domain : t.status === statusFilter)),
   );
 
   return (
@@ -278,7 +289,7 @@ export default function Panel({
                   onClick={() => navigate(id)}
                 >
                   <Icon size={19} />
-                  {label}
+                  {id === 'settings' ? 'Acesso' : label}
                 </button>
               ) : (
                 <Link
@@ -371,6 +382,41 @@ export default function Panel({
           )}
           {admin && !tenant && view !== 'settings' && (
             <>
+              <div
+                className="gt-admin-overview"
+                aria-label="Resumo dos tenants"
+              >
+                {(
+                  [
+                    ['all', 'Todos', tenants.length],
+                    [
+                      'active',
+                      'Ativos',
+                      tenants.filter((t) => t.status === 'active').length,
+                    ],
+                    [
+                      'suspended',
+                      'Suspensos',
+                      tenants.filter((t) => t.status === 'suspended').length,
+                    ],
+                    [
+                      'pending',
+                      'Sem domínio',
+                      tenants.filter((t) => !t.domain).length,
+                    ],
+                  ] as const
+                ).map(([id, label, count]) => (
+                  <button
+                    key={id}
+                    className={`gt-admin-metric ${statusFilter === id ? 'is-selected' : ''}`}
+                    aria-pressed={statusFilter === id}
+                    onClick={() => setStatusFilter(id)}
+                  >
+                    <span>{label}</span>
+                    <strong>{count}</strong>
+                  </button>
+                ))}
+              </div>
               <div className="gt-list-toolbar">
                 <span>
                   {session.state.tenants.length} tenants{' '}
@@ -387,7 +433,7 @@ export default function Panel({
                   <Search size={17} />
                   <input
                     aria-label="Buscar tenants"
-                    placeholder="Buscar por nome ou e-mail"
+                    placeholder="Nome, responsável, e-mail ou domínio"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
@@ -407,33 +453,73 @@ export default function Panel({
                     </span>
                     <div className="gt-tenant-info">
                       <h2>{t.name}</h2>
-                      <p>{t.email || 'Responsável não configurado'}</p>
+                      <p>
+                        {t.admin || 'Responsável não configurado'}
+                        {t.email ? ` · ${t.email}` : ''}
+                      </p>
+                      <div className="gt-tenant-meta">
+                        <span>
+                          {t.domain
+                            ? `Domínio cadastrado: ${t.domain}`
+                            : 'Domínio não cadastrado'}
+                        </span>
+                        <span>
+                          {t.connections.length}{' '}
+                          {t.connections.length === 1
+                            ? 'conexão habilitada'
+                            : 'conexões habilitadas'}
+                        </span>
+                      </div>
                     </div>
                     <span
                       className={`gt-status ${t.status === 'active' ? 'is-active' : ''}`}
                     >
                       {t.status === 'active' ? 'Ativo' : 'Suspenso'}
                     </span>
-                    <button className="gt-button" onClick={() => openTenant(t)}>
-                      Ver plataforma
-                      <ChevronRight size={16} />
-                    </button>
+                    <div className="gt-tenant-actions">
+                      <button
+                        className="gt-button"
+                        onClick={() => {
+                          setSelectedId(t.id);
+                          navigate('settings', t.id);
+                        }}
+                      >
+                        Gerenciar acesso
+                      </button>
+                      <button
+                        className="gt-button"
+                        onClick={() => openTenant(t)}
+                      >
+                        Ver plataforma
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
                   </article>
                 ))}
                 {!filtered.length && (
                   <div className="gt-empty">
                     <Users size={32} />
                     <h2>
-                      {search
+                      {search || statusFilter !== 'all'
                         ? 'Nenhum tenant encontrado'
                         : 'Seu primeiro tenant começa aqui'}
                     </h2>
                     <p>
-                      {search
-                        ? 'Tente outro nome ou e-mail.'
+                      {search || statusFilter !== 'all'
+                        ? 'Tente outro termo ou limpe os filtros.'
                         : 'Cadastre um tenant para liberar o acesso à sua plataforma.'}
                     </p>
-                    {!search && (
+                    {search || statusFilter !== 'all' ? (
+                      <button
+                        className="gt-button"
+                        onClick={() => {
+                          setSearch('');
+                          setStatusFilter('all');
+                        }}
+                      >
+                        Limpar filtros
+                      </button>
+                    ) : (
                       <button
                         className="gt-button gt-primary"
                         onClick={() => setCreating(true)}
@@ -887,6 +973,7 @@ function TenantAccess({
 }) {
   const [admin, setAdmin] = useState(tenant.admin);
   const [email, setEmail] = useState(tenant.email);
+  const [confirmSuspend, setConfirmSuspend] = useState(false);
   return (
     <div className="gt-settings-grid">
       <section className="gt-card gt-editor">
@@ -920,7 +1007,14 @@ function TenantAccess({
               onChange={(e) => setEmail(e.target.value)}
             />
           </label>
-          <button className="gt-button gt-primary" disabled={busy}>
+          <button
+            className="gt-button gt-primary"
+            disabled={
+              busy ||
+              (admin.trim() === tenant.admin &&
+                email.trim().toLowerCase() === tenant.email)
+            }
+          >
             Salvar responsável
           </button>
         </form>
@@ -940,15 +1034,50 @@ function TenantAccess({
           className="gt-button gt-status-action"
           disabled={busy}
           onClick={() =>
-            void onSave({
-              ...tenant,
-              status: tenant.status === 'active' ? 'suspended' : 'active',
-            })
+            tenant.status === 'active'
+              ? setConfirmSuspend(true)
+              : void onSave({
+                  ...tenant,
+                  status: 'active',
+                })
           }
         >
           {tenant.status === 'active' ? 'Suspender tenant' : 'Reativar tenant'}
         </button>
+        <p className="gt-muted">
+          Cadastrado em {new Date(tenant.created).toLocaleDateString('pt-BR')}
+        </p>
       </section>
+      <Dialog open={confirmSuspend} onOpenChange={setConfirmSuspend}>
+        <DialogContent className="gt-dialog">
+          <DialogHeader>
+            <DialogTitle>Suspender {tenant.name}?</DialogTitle>
+            <DialogDescription>
+              O responsável perderá o acesso e a plataforma ficará indisponível.
+              Você pode reativar depois.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="gt-form-actions">
+            <button
+              className="gt-button"
+              disabled={busy}
+              onClick={() => setConfirmSuspend(false)}
+            >
+              Cancelar
+            </button>
+            <button
+              className="gt-button gt-danger"
+              disabled={busy}
+              onClick={async () => {
+                if (await onSave({ ...tenant, status: 'suspended' }))
+                  setConfirmSuspend(false);
+              }}
+            >
+              Confirmar suspensão
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

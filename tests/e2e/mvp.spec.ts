@@ -456,3 +456,80 @@ test('Rotas diretas e fallbacks preservam o destino e o status', async ({
   expect(unknown.status()).toBe(404);
   expect(await unknown.text()).toContain('Página não encontrada');
 });
+
+test('admin filters tenants and confirms suspension without losing platform data', async ({
+  page,
+}) => {
+  await login(page);
+  const tenant = await seedTenant(page.request, 'Admin Gestão Simples');
+  const current = await state(page.request);
+  expect(
+    (
+      await save(page.request, current, 'applicationBranding', {
+        id: tenant.id,
+        name: tenant.name,
+        color: tenant.color,
+        secondaryColor: '#ffffff',
+        logo: '',
+        domain: `gestao-${crypto.randomUUID()}.example.test`,
+      })
+    ).status(),
+  ).toBe(200);
+  await page.reload();
+  await page.getByLabel('Buscar tenants').fill('Admin Gestão Simples');
+  const row = page
+    .locator('.gt-tenant-row')
+    .filter({ hasText: 'Admin Gestão Simples' });
+  await expect(row).toHaveCount(1);
+  await expect(row).toContainText('Domínio cadastrado:');
+  await page.getByRole('button', { name: /Sem domínio/ }).click();
+  await expect(row).toHaveCount(0);
+  await page.getByRole('button', { name: 'Limpar filtros' }).click();
+  await page.getByLabel('Buscar tenants').fill('Admin Gestão Simples');
+  await row.getByRole('button', { name: 'Gerenciar acesso' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Acesso', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Suspender tenant' }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Cancelar', exact: true })
+    .click();
+  expect(
+    (await state(page.request)).state.tenants.find((t) => t.id === tenant.id)
+      ?.status,
+  ).toBe('active');
+  await page.getByRole('button', { name: 'Suspender tenant' }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Confirmar suspensão' })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Reativar tenant' }),
+  ).toBeVisible();
+  expect(
+    (await page.request.get(`/api/branding?tenant=${tenant.id}`)).status(),
+  ).toBe(403);
+  await page.getByRole('button', { name: 'Reativar tenant' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Suspender tenant' }),
+  ).toBeVisible();
+  expect(
+    (await page.request.get(`/api/branding?tenant=${tenant.id}`)).status(),
+  ).toBe(200);
+  await page.getByRole('button', { name: 'Todos os tenants' }).click();
+  await page.screenshot({
+    path: 'outputs/gotrade-admin-overview.png',
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: 'outputs/gotrade-admin-mobile.png',
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
