@@ -12,8 +12,12 @@ export type TenantUser = {
   created: string;
 };
 
-export type LoginTemplate = 'split' | 'centered' | 'hero' | 'glassmorphism' | 'minimal';
-
+export type LoginTemplate =
+  | 'split'
+  | 'centered'
+  | 'hero'
+  | 'glassmorphism'
+  | 'minimal';
 
 export type Tenant = {
   id: string;
@@ -86,7 +90,8 @@ export const availableBots: TradingBotDefinition[] = [
     name: 'MetaTrader 5 Expert Advisor (EA)',
     category: 'Execução Algorítmica',
     protocol: 'MQL5 Bridge / DLL Socket',
-    description: 'Execução automatizada de ordens via Expert Advisors diretamente nas contas MT5 das corretoras conectadas.',
+    description:
+      'Execução automatizada de ordens via Expert Advisors diretamente nas contas MT5 das corretoras conectadas.',
     recommended: true,
   },
   {
@@ -94,7 +99,8 @@ export const availableBots: TradingBotDefinition[] = [
     name: 'TradingView Webhook Automator',
     category: 'Sinais & Alertas',
     protocol: 'HTTPS REST / JSON Webhooks',
-    description: 'Disparo instantâneo de ordens a partir de alertas de indicadores e estratégias do Pine Script no TradingView.',
+    description:
+      'Disparo instantâneo de ordens a partir de alertas de indicadores e estratégias do Pine Script no TradingView.',
     recommended: true,
   },
   {
@@ -102,7 +108,8 @@ export const availableBots: TradingBotDefinition[] = [
     name: 'cTrader Open API Bot',
     category: 'API Direta',
     protocol: 'Protobuf / WebSocket FIX',
-    description: 'Conexão de altíssima velocidade para cBot e algoritmos em C# com roteamento direto para cTrader.',
+    description:
+      'Conexão de altíssima velocidade para cBot e algoritmos em C# com roteamento direto para cTrader.',
     recommended: false,
   },
   {
@@ -110,7 +117,8 @@ export const availableBots: TradingBotDefinition[] = [
     name: 'Engine de Copy Trading Master',
     category: 'Espelhamento de Contas',
     protocol: 'Internal Zero-Latency Sync',
-    description: 'Espelhamento proporcional de operações de uma conta mestre para múltiplas contas de clientes finais.',
+    description:
+      'Espelhamento proporcional de operações de uma conta mestre para múltiplas contas de clientes finais.',
     recommended: true,
   },
   {
@@ -118,7 +126,8 @@ export const availableBots: TradingBotDefinition[] = [
     name: 'Grid & DCA Automator',
     category: 'Estratégia de Grade',
     protocol: 'REST Engine TradingPro',
-    description: 'Gerenciador de grade de ordens e preço médio (Dollar Cost Averaging) com controle de drawdown.',
+    description:
+      'Gerenciador de grade de ordens e preço médio (Dollar Cost Averaging) com controle de drawdown.',
     recommended: false,
   },
   {
@@ -126,7 +135,8 @@ export const availableBots: TradingBotDefinition[] = [
     name: 'HFT / FIX Protocol 4.4',
     category: 'Alta Frequência',
     protocol: 'FIX Protocol / TCP Socket',
-    description: 'Interface institucional dedicada para negociação em microssegundos com acesso direto ao book das corretoras.',
+    description:
+      'Interface institucional dedicada para negociação em microssegundos com acesso direto ao book das corretoras.',
     recommended: false,
   },
 ];
@@ -141,7 +151,12 @@ export type PlatformSettings = {
 };
 
 export const defaultPlatformSettings: PlatformSettings = {
-  allowedBots: ['mt5-ea', 'tradingview-webhooks', 'copy-trading-engine', 'grid-dca-bot'],
+  allowedBots: [
+    'mt5-ea',
+    'tradingview-webhooks',
+    'copy-trading-engine',
+    'grid-dca-bot',
+  ],
   masterDomain: '',
   maintenanceMode: false,
   maxUploadBytes: 409600,
@@ -150,10 +165,19 @@ export const defaultPlatformSettings: PlatformSettings = {
 };
 
 export type State = {
+  billing?: BillingRecord[];
   tenants: Tenant[];
   checkouts: Checkout[];
   activity: { id: string; text: string; time: string }[];
   settings?: PlatformSettings;
+};
+export type BillingRecord = {
+  id: string;
+  tenantId: string;
+  plan: string;
+  amountCents: number;
+  due: string;
+  status: 'pending' | 'paid' | 'canceled';
 };
 export type Session = {
   role: 'admin' | 'tenant';
@@ -220,10 +244,12 @@ export function mockCheckouts(tenant: Tenant): Checkout[] {
   const base1 = newCheckout(tenant);
   base1.name = 'Robô Scalper MT5 - Licença Anual';
   base1.title = 'Automatize suas operações com precisão institucional';
-  base1.subtitle = 'Execução algorítmica de alta frequência com gestão de risco integrada.';
+  base1.subtitle =
+    'Execução algorítmica de alta frequência com gestão de risco integrada.';
   base1.price = 497;
   base1.published = true;
-  base1.benefits = 'Execução automática 24/5 sem delay\nSetup de stop móvel e breakeven\nConexão direta com Bybit e Admiral\nAtualizações e suporte VIP vitalício';
+  base1.benefits =
+    'Execução automática 24/5 sem delay\nSetup de stop móvel e breakeven\nConexão direta com Bybit e Admiral\nAtualizações e suporte VIP vitalício';
   base1.bump = true;
   base1.bumpTitle = 'Planilha de Gestão Avançada de Lote';
   base1.bumpPrice = 47;
@@ -234,10 +260,12 @@ export function mockCheckouts(tenant: Tenant): Checkout[] {
   base2.id = crypto.randomUUID();
   base2.name = 'Mentoria VIP + Sala ao Vivo';
   base2.title = 'Opere lado a lado com especialistas todos os dias';
-  base2.subtitle = 'Acompanhamento diário no pregão ao vivo com análise de contexto e fluxo.';
+  base2.subtitle =
+    'Acompanhamento diário no pregão ao vivo com análise de contexto e fluxo.';
   base2.price = 997;
   base2.published = true;
-  base2.benefits = 'Acesso diário à sala de operações ao vivo\nAnálise de macroeconomia e fluxo matinal\nGrupo fechado no Discord com traders seniores\nFeedback semanal individual das suas ordens';
+  base2.benefits =
+    'Acesso diário à sala de operações ao vivo\nAnálise de macroeconomia e fluxo matinal\nGrupo fechado no Discord com traders seniores\nFeedback semanal individual das suas ordens';
   base2.bump = true;
   base2.bumpTitle = 'Guia de Psicologia e Disciplina no Trading';
   base2.bumpPrice = 37;
@@ -248,10 +276,12 @@ export function mockCheckouts(tenant: Tenant): Checkout[] {
   base3.id = crypto.randomUUID();
   base3.name = 'Indicador Smart Flow Pro';
   base3.title = 'Identifique a absorção institucional antes do movimento';
-  base3.subtitle = 'Indicador técnico proprietário com coloração automática de candles.';
+  base3.subtitle =
+    'Indicador técnico proprietário com coloração automática de candles.';
   base3.price = 197;
   base3.published = false;
-  base3.benefits = 'Coloração de candles por volume institucional\nAlertas sonoros e notificações no Telegram\nCompatível com MT5 e TradingView';
+  base3.benefits =
+    'Coloração de candles por volume institucional\nAlertas sonoros e notificações no Telegram\nCompatível com MT5 e TradingView';
 
   return [base1, base2, base3];
 }
@@ -259,12 +289,36 @@ export function mockCheckouts(tenant: Tenant): Checkout[] {
 export function mockActivities(): { id: string; text: string; time: string }[] {
   const now = Date.now();
   return [
-    { id: crypto.randomUUID(), text: 'Checkout "Robô Scalper MT5 - Licença Anual" publicado online com sucesso', time: new Date(now - 1000 * 60 * 15).toISOString() },
-    { id: crypto.randomUUID(), text: 'Apontamento CNAME verificado com sucesso para cname.whitelabel.local', time: new Date(now - 1000 * 60 * 65).toISOString() },
-    { id: crypto.randomUUID(), text: 'Snapshot automático diário gerado e verificado (SHA-256 válido)', time: new Date(now - 1000 * 60 * 180).toISOString() },
-    { id: crypto.randomUUID(), text: 'Conexão com corretora Bybit liberada para a operação', time: new Date(now - 1000 * 60 * 360).toISOString() },
-    { id: crypto.randomUUID(), text: 'Checkout "Mentoria VIP + Sala ao Vivo" configurado e publicado', time: new Date(now - 1000 * 60 * 720).toISOString() },
-    { id: crypto.randomUUID(), text: 'Identidade visual e logotipo da marca atualizados', time: new Date(now - 1000 * 60 * 1440).toISOString() },
+    {
+      id: crypto.randomUUID(),
+      text: 'Checkout "Robô Scalper MT5 - Licença Anual" publicado online com sucesso',
+      time: new Date(now - 1000 * 60 * 15).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      text: 'Apontamento CNAME verificado com sucesso para cname.whitelabel.local',
+      time: new Date(now - 1000 * 60 * 65).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      text: 'Snapshot automático diário gerado e verificado (SHA-256 válido)',
+      time: new Date(now - 1000 * 60 * 180).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      text: 'Conexão com corretora Bybit liberada para a operação',
+      time: new Date(now - 1000 * 60 * 360).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      text: 'Checkout "Mentoria VIP + Sala ao Vivo" configurado e publicado',
+      time: new Date(now - 1000 * 60 * 720).toISOString(),
+    },
+    {
+      id: crypto.randomUUID(),
+      text: 'Identidade visual e logotipo da marca atualizados',
+      time: new Date(now - 1000 * 60 * 1440).toISOString(),
+    },
   ];
 }
 
@@ -292,7 +346,12 @@ export function initialState(email: string): State {
       },
     ],
   };
-  return { tenants: [t], checkouts: mockCheckouts(t), activity: mockActivities(), settings: defaultPlatformSettings };
+  return {
+    tenants: [t],
+    checkouts: mockCheckouts(t),
+    activity: mockActivities(),
+    settings: defaultPlatformSettings,
+  };
 }
 export function getTenantUsers(tenant: Tenant): TenantUser[] {
   if (tenant.users && tenant.users.length > 0) {
@@ -329,7 +388,7 @@ export function validateTenant(t: Tenant) {
     'logo',
     'domain',
   ]);
-  if (!/^[a-f0-9-]{36}$/.test(t.id) || (!!t.email !== !!t.admin.trim()))
+  if (!/^[a-f0-9-]{36}$/.test(t.id) || !!t.email !== !!t.admin.trim())
     throw Error('Administrador ou identificação inválida.');
   if (
     !t ||
@@ -338,7 +397,8 @@ export function validateTenant(t: Tenant) {
     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(t.slug) ||
     (t.email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.email)) ||
     !/^#[0-9a-f]{6}$/i.test(t.color) ||
-    (t.secondaryColor !== undefined && !/^#[0-9a-f]{6}$/i.test(t.secondaryColor)) ||
+    (t.secondaryColor !== undefined &&
+      !/^#[0-9a-f]{6}$/i.test(t.secondaryColor)) ||
     !validImage(t.logo) ||
     (t.favicon && !validImage(t.favicon)) ||
     !['active', 'suspended'].includes(t.status) ||
@@ -353,7 +413,15 @@ export function validateTenant(t: Tenant) {
     throw Error('Informe um domínio válido, sem https://.');
 }
 export function validateCheckout(c: Checkout) {
-  if (c.paymentMethods !== undefined && (!Array.isArray(c.paymentMethods) || !c.paymentMethods.length || c.paymentMethods.length > 3 || new Set(c.paymentMethods).size !== c.paymentMethods.length || c.paymentMethods.some(m => !['pix', 'boleto', 'card'].includes(m)))) throw Error('Selecione pelo menos uma forma de pagamento válida.');
+  if (
+    c.paymentMethods !== undefined &&
+    (!Array.isArray(c.paymentMethods) ||
+      !c.paymentMethods.length ||
+      c.paymentMethods.length > 3 ||
+      new Set(c.paymentMethods).size !== c.paymentMethods.length ||
+      c.paymentMethods.some((m) => !['pix', 'boleto', 'card'].includes(m)))
+  )
+    throw Error('Selecione pelo menos uma forma de pagamento válida.');
   if (c?.design) validateDesign(c.design);
   requireStrings(c, [
     'id',

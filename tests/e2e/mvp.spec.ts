@@ -533,3 +533,43 @@ test('admin filters tenants and confirms suspension without losing platform data
     ),
   ).toBe(true);
 });
+
+test('admin user directory and demo payments persist across navigation', async ({
+  page,
+}) => {
+  await login(page);
+  const tenant = await seedTenant(page.request, 'Tenant Financeiro');
+  await page.reload();
+  await page.getByRole('button', { name: 'Usuários', exact: true }).click();
+  await page.getByLabel('Buscar usuários').fill('Tenant Financeiro');
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await expect(page.locator('tbody')).toContainText(tenant.email);
+  await page.getByRole('button', { name: 'Pagamentos', exact: true }).click();
+  await page.getByRole('button', { name: 'Novo registro' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Tenant', { exact: true }).selectOption(tenant.id);
+  await dialog.getByLabel('Plano', { exact: true }).fill('Pro mensal');
+  await dialog.getByLabel('Valor (R$)', { exact: true }).fill('149.90');
+  await dialog.getByLabel('Vencimento', { exact: true }).fill('2025-01-01');
+  await dialog.getByRole('button', { name: 'Salvar registro' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('tbody')).toContainText('Atrasado');
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: 'Pagamentos', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('tbody')).toContainText('Pro mensal');
+  await page.locator('tbody').getByRole('button', { name: 'Editar' }).click();
+  await dialog.getByLabel('Situação', { exact: true }).selectOption('paid');
+  await dialog.getByRole('button', { name: 'Salvar registro' }).click();
+  await expect(page.locator('tbody')).toContainText('Pago');
+  expect(
+    (await state(page.request)).state.billing?.find(
+      (r) => r.tenantId === tenant.id,
+    )?.amountCents,
+  ).toBe(14990);
+  await page.screenshot({
+    path: 'outputs/gotrade-payments.png',
+    fullPage: true,
+  });
+});

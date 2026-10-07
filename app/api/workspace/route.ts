@@ -2,6 +2,7 @@ import { ServiceUnavailableError } from '@/lib/service';
 import { database, workspace, scoped } from '@/lib/server';
 import { sameOrigin } from '@/lib/auth';
 import { updateApplication } from '@/lib/application';
+import { validateBilling } from '@/lib/billing';
 import {
   validateTenant,
   validateCheckout,
@@ -59,7 +60,28 @@ export async function POST(request: Request) {
         },
         { status: 409 },
       );
-    if (body.action === 'applicationBranding') {
+    if (body.action === 'billing') {
+      if (w.role !== 'admin') throw Error('FORBIDDEN');
+      validateBilling(body.value);
+      const record = body.value;
+      if (!s.tenants.some((t) => t.id === record.tenantId))
+        throw Error('Tenant não encontrado.');
+      const old = s.billing?.find((b) => b.id === record.id);
+      if (old && old.tenantId !== record.tenantId)
+        throw Error('O tenant do registro não pode ser alterado.');
+      const clean = {
+        id: record.id,
+        tenantId: record.tenantId,
+        plan: record.plan.trim(),
+        amountCents: record.amountCents,
+        due: record.due,
+        status: record.status,
+      };
+      s.billing = old
+        ? s.billing!.map((b) => (b.id === record.id ? clean : b))
+        : [...(s.billing || []), clean];
+      event = 'Atualizou um registro demonstrativo de pagamento';
+    } else if (body.action === 'applicationBranding') {
       const old = s.tenants.find((t) => t.id === body.value?.id);
       if (!old || (w.role === 'tenant' && old.id !== w.tenantId))
         throw Error('FORBIDDEN');
