@@ -399,7 +399,7 @@ export default function Panel({
             />
           )}
           {view === 'settings' && (
-            <>
+            <div className={admin ? 'gt-account-layout' : undefined}>
               <AccountSettings email={session.email} onSaved={load} />
               {admin && (
                 <AdminSettings
@@ -409,7 +409,7 @@ export default function Panel({
                   onSave={(v) => save('settings', v)}
                 />
               )}
-            </>
+            </div>
           )}
           {!admin && tenant && view === 'platform' && (
             <PlatformEditor

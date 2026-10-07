@@ -1765,13 +1765,15 @@
   object-fit: contain;
 }
 .gt-sidebar-bottom .gt-signout {
-  background: #8c262b;
-  border-color: #a43a40;
-  color: #fff;
+  background: #ffffff05;
+  border-color: #ffffff1a;
+  color: var(--foreground);
 }
-.gt-sidebar-bottom .gt-signout:hover {
+.gt-sidebar-bottom .gt-signout:hover,
+.gt-sidebar-bottom .gt-signout:active {
   background: #aa3036;
   color: #fff;
+  border-color: #a43a40;
 }
 .gt-dialog {
   padding: 30px !important;
@@ -2092,5 +2094,33 @@
   }
   .gt-form label {
     min-width: 0;
+  }
+}
+.gt-account-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.gt-account-layout > .gt-account-settings {
+  margin: 0;
+}
+.gt-account-layout > .gt-admin-settings {
+  display: contents;
+}
+.gt-account-layout > .gt-admin-settings > section:first-child {
+  grid-column: 2;
+  grid-row: 1;
+}
+.gt-account-layout > .gt-admin-settings > section:last-child {
+  grid-column: 1/-1;
+}
+@media (max-width: 1000px) {
+  .gt-account-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gt-account-layout > .gt-admin-settings > section:first-child {
+    grid-column: 1;
+    grid-row: auto;
   }
 }
