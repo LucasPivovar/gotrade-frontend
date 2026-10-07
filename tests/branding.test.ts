@@ -72,8 +72,8 @@ void test('login thumbnails and real auth share the same template without photo 
 
 void test('chart canvas receives concrete theme colors instead of CSS variable strings', () => {
   const bundle = readFileSync('prototipo/assets/index-D08ZekFh.js', 'utf8');
-  assert.ok(bundle.includes('upColor:getComputedStyle(document.documentElement).getPropertyValue("--brand-accent").trim()'));
-  assert.ok(bundle.includes('downColor:getComputedStyle(document.documentElement).getPropertyValue("--brand-complement").trim()'));
+  assert.ok(bundle.includes('upColor:getComputedStyle(document.documentElement).getPropertyValue("--positive").trim()'));
+  assert.ok(bundle.includes('downColor:getComputedStyle(document.documentElement).getPropertyValue("--sell").trim()'));
   assert.ok(!bundle.includes('layout:{background:{color:"var(--panel)"}'));
 });
 

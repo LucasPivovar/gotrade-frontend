@@ -101,6 +101,9 @@ test('admin manages tenants, edits platform identity and reloads saved data', as
         ),
     )
     .toBe('#6366f1');
+  await expect(preview.locator('[data-tour="bot-start"]')).toHaveCSS('background-color', 'rgb(74, 222, 128)');
+  await expect(preview.getByText(/^(COMPRA|BUY)$/, {exact:true}).first()).toHaveCSS('color', 'rgb(74, 222, 128)');
+  await expect(preview.getByText('WIN (+$20.00)', {exact:true}).first()).toHaveCSS('color', 'rgb(74, 222, 128)');
   expect(
     (await state(page.request)).state.tenants.some(
       (t) => t.name === 'Alpha Visual',

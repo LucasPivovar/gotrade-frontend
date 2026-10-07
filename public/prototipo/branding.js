@@ -13,7 +13,7 @@
   function applyColors(branding) {
     const palette = window.TradingProPalette.create(branding.color, branding.secondaryColor);
     const variables = {
-      '--lime': palette.primary, '--lime-dim': palette.hover, '--buy': palette.primary,
+      '--lime': palette.primary, '--lime-dim': palette.hover, '--buy': '#4ade80', '--positive': '#4ade80', '--positive-rgb': '74,222,128', '--positive-hover': '#22c55e', '--on-positive': '#052e16', '--sell': '#ff4d4d',
       '--brand-primary': palette.primary, '--brand-rgb': palette.rgb, '--brand-secondary': palette.secondary,
       '--brand-accent': palette.accent, '--brand-complement': palette.complement,
       '--brand-hover': palette.hover, '--brand-on-primary': palette.onPrimary, '--brand-on-hover': palette.onHover,
@@ -32,15 +32,18 @@
     let style = document.getElementById('whitelabel-brand-styles');
     if (!style) { style = document.createElement('style'); style.id = 'whitelabel-brand-styles'; document.head.appendChild(style); }
     style.textContent = `
-      .btn-lime,.btn-buy,.hero-primary,.tour-button{background:var(--brand-primary)!important;color:var(--brand-on-primary)!important}
-      .btn-lime:hover,.btn-buy:hover{background:var(--brand-hover)!important;color:var(--brand-on-hover)!important}
-      .lime,.pos,.brand-accent,.history-eyebrow,.badge-demo,.tabbar a.active{color:var(--brand-accent)!important}
+      .btn-lime,.hero-primary,.tour-button{background:var(--brand-primary)!important;color:var(--brand-on-primary)!important}
+      .btn-lime:hover{background:var(--brand-hover)!important;color:var(--brand-on-hover)!important}
+      .lime,.brand-accent,.history-eyebrow,.badge-demo,.tabbar a.active{color:var(--brand-accent)!important}
       .badge-demo,.tabbar a.active,.mode-chip-entry{background:var(--brand-subtle)!important}
       .history-chart-wrap polyline{stroke:var(--brand-accent)!important}.history-chart-wrap circle{fill:var(--brand-accent)!important}
       input:focus,select:focus,textarea:focus{border-color:var(--brand-accent)!important}
       .tour-cta{background:var(--panel)!important;border-color:var(--border)!important}
       .channel-icon-ticket{background:var(--brand-subtle)!important;color:var(--brand-accent)!important;border-color:var(--border)!important}
       .channel-ticket:after{background:linear-gradient(90deg,var(--brand-primary),var(--brand-secondary))!important}
+      .pos{color:var(--positive)!important}
+      .btn-buy,[data-tour="bot-start"]{background:var(--positive)!important;color:var(--on-positive)!important}
+      .btn-buy:hover,[data-tour="bot-start"]:hover{background:var(--positive-hover)!important;color:var(--on-positive)!important}
       .tp-auth-brand strong{color:var(--text)}
     `;
   }

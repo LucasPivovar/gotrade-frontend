@@ -93,6 +93,25 @@ export function patchBundleFile(targetPath) {
   code = code.replace('stroke:"#191919",strokeWidth:"2.6"', 'stroke:"var(--brand-on-primary)",strokeWidth:"2.6"');
   code = code.replace('r:"2.4",fill:"#191919"', 'r:"2.4",fill:"var(--brand-on-primary)"');
 
+  // Trading meanings remain green/red even when the tenant chooses another brand.
+  code = code.replace(/"var\(--(?:lime|brand-accent)\)"(?=:[^,;]{0,45}"var\(--sell\)")/g, '"var(--positive)"');
+  code = code.replace(/rgba\(var\(--brand-rgb\),([.\d]+)\)(?="\s*:[^,;]{0,35}"rgba\(255,(?:77|80),(?:77|80),)/g, 'rgba(var(--positive-rgb),$1)');
+  const resultStart = code.indexOf('function wT(');
+  const resultEnd = code.indexOf('const ST=', resultStart);
+  if (resultStart !== -1 && resultEnd !== -1) {
+    code = code.slice(0, resultStart) + code.slice(resultStart, resultEnd)
+      .replaceAll('--brand-rgb', '--positive-rgb').replaceAll('--brand-accent', '--positive') + code.slice(resultEnd);
+  }
+  const runningStart = code.indexOf('background:p.running?');
+  const runningEnd = code.indexOf('p.running?c("bot.running")', runningStart);
+  if (runningStart !== -1 && runningEnd !== -1) {
+    code = code.slice(0, runningStart) + code.slice(runningStart, runningEnd)
+      .replaceAll('--brand-rgb', '--positive-rgb').replaceAll('--brand-primary', '--positive').replaceAll('--lime', '--positive') + code.slice(runningEnd);
+  }
+  code = code.replace('color:"var(--brand-accent)",fontSize:12},children:"● Ativo"', 'color:"var(--positive)",fontSize:12},children:"● Ativo"');
+  code = code.replace(/((?:upColor|borderUpColor|wickUpColor):(?:v\(|getComputedStyle\(document.documentElement\).getPropertyValue\())"--brand-accent"/g, '$1"--positive"');
+  code = code.replace(/((?:downColor|borderDownColor|wickDownColor):(?:v\(|getComputedStyle\(document.documentElement\).getPropertyValue\())"--brand-complement"/g, '$1"--sell"');
+
   if (code !== before) {
     writeFileSync(targetPath, code, 'utf-8');
     console.log(`[Patch] Saved updates to ${targetPath}`);
