@@ -5,6 +5,7 @@ import { updateApplication } from '@/lib/application';
 import { validateBilling } from '@/lib/billing';
 import {
   validateTenant,
+  defaultPlatformSettings,
   validateCheckout,
   type Tenant,
   type Checkout,
@@ -110,6 +111,18 @@ export async function POST(request: Request) {
       const t = body.value as Tenant;
       validateTenant(t);
       const old = s.tenants.find((x) => x.id === t.id);
+      const catalog = s.settings?.enabledProviders || [
+        'XGlobal',
+        'Bybit',
+        'Admiral',
+        'XR',
+      ];
+      if (
+        t.connections.some(
+          (p) => !catalog.includes(p) && !old?.connections.includes(p),
+        )
+      )
+        throw Error('Esta conexão está desativada no catálogo.');
       if (
         s.tenants.some(
           (x) =>
@@ -162,9 +175,29 @@ export async function POST(request: Request) {
       event = `Excluiu o checkout ${c.name}`;
     } else if (body.action === 'settings') {
       if (w.role !== 'admin') throw Error('FORBIDDEN');
+      const v = body.value;
+      if (
+        !v ||
+        !Array.isArray(v.enabledProviders) ||
+        v.enabledProviders.some(
+          (p: unknown) =>
+            typeof p !== 'string' ||
+            !['XGlobal', 'Bybit', 'Admiral', 'XR'].includes(p),
+        ) ||
+        typeof v.supportEmail !== 'string' ||
+        (v.supportEmail &&
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.supportEmail)) ||
+        typeof v.defaultPlan !== 'string' ||
+        !v.defaultPlan.trim() ||
+        v.defaultPlan.length > 80
+      )
+        throw Error('Configurações inválidas.');
       s.settings = {
+        ...defaultPlatformSettings,
         ...s.settings,
-        ...body.value,
+        enabledProviders: [...new Set(v.enabledProviders)] as string[],
+        supportEmail: v.supportEmail.trim(),
+        defaultPlan: v.defaultPlan.trim(),
       };
       event = 'Atualizou as configurações globais da plataforma';
     } else throw Error('Ação desconhecida.');

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { randomBytes, scryptSync } from 'node:crypto';
 import { demoEnabled, demoAccounts } from './demo';
 import { initialState, newCheckout } from './model';
+import { addDemoData } from './demo-data';
 let client: Client | undefined;
 let ready: Promise<void> | undefined;
 function connection() {
@@ -45,9 +46,17 @@ export async function initialize() {
         if (!demoEnabled()) return;
         const db = connection();
         const existing = await db.execute(
-          "SELECT owner FROM workspaces WHERE owner='demo-admin'",
+          "SELECT owner,data FROM workspaces WHERE owner='demo-admin'",
         );
-        if (existing.rows.length) return;
+        if (existing.rows.length) {
+          const state = JSON.parse(String(existing.rows[0].data));
+          if (state.demoVersion !== 1)
+            await db.execute({
+              sql: "UPDATE workspaces SET data=?,revision=revision+1 WHERE owner='demo-admin'",
+              args: [JSON.stringify(addDemoData(state))],
+            });
+          return;
+        }
         const state = initialState(demoAccounts[1].email);
         state.tenants[0].id = '10000000-0000-4000-8000-000000000001';
         state.tenants[0].admin = 'Minha conta';
@@ -62,6 +71,7 @@ export async function initialize() {
             time: new Date().toISOString(),
           },
         ];
+        addDemoData(state);
         await db.batch(
           [
             ...demoAccounts.map((account) => {

@@ -7,6 +7,8 @@ import {
   ArrowUpRight,
   Check,
   ChevronRight,
+  Globe,
+  CirclePause,
   LogOut,
   Palette,
   Plus,
@@ -28,8 +30,9 @@ import {
 import AccountInvite from '@/components/account-invite';
 import PlatformPreview from '@/components/platform-preview';
 import LogoEditor from '@/components/logo-editor';
-import AdminOverview from '@/components/admin-overview';
-import { AdminUsers, AdminPayments } from '@/components/admin-management';
+import AdminSettings from '@/components/admin-settings';
+import TenantOverview from '@/components/tenant-overview';
+import { AdminPayments } from '@/components/admin-management';
 import { providers, type Session, type Tenant } from '@/lib/model';
 import { createApplication, validateApplicationBrand } from '@/lib/application';
 import { applyBrandTheme } from '@/lib/brand-theme';
@@ -84,7 +87,7 @@ export default function Panel({
       const params = new URLSearchParams(window.location.search);
       if (
         data.role === 'admin' &&
-        ['users', 'payments'].includes(params.get('section') || '')
+        ['overview', 'payments'].includes(params.get('section') || '')
       )
         setView(params.get('section')!);
       const requestedId = params.get('tenant');
@@ -95,7 +98,12 @@ export default function Panel({
       ) {
         setSelectedId(requestedId);
         const section = params.get('section') || 'platform';
-        setView(sections.some((s) => s.id === section) ? section : 'platform');
+        setView(
+          ['overview', 'payments'].includes(section) ||
+            sections.some((s) => s.id === section)
+            ? section
+            : 'platform',
+        );
       }
     } catch (e) {
       setError((e as Error).message);
@@ -115,7 +123,7 @@ export default function Panel({
       setSelectedId(params.get('tenant') || '');
       const section = params.get('section') || location.pathname.slice(1);
       setView(
-        ['users', 'payments'].includes(section) ||
+        ['overview', 'payments'].includes(section) ||
           sections.some((s) => s.id === section)
           ? section
           : 'connections',
@@ -187,7 +195,7 @@ export default function Panel({
         ? `/tenants?tenant=${encodeURIComponent(id)}&section=${next}`
         : next === 'settings'
           ? '/settings'
-          : ['users', 'payments'].includes(next)
+          : ['overview', 'payments'].includes(next)
             ? `/tenants?section=${next}`
             : '/tenants';
       window.history.pushState(null, '', target);
@@ -197,7 +205,7 @@ export default function Panel({
   }
   function openTenant(t: Tenant) {
     setSelectedId(t.id);
-    navigate('platform', t.id);
+    navigate('overview', t.id);
   }
 
   if (!session)
@@ -229,7 +237,11 @@ export default function Panel({
             : 'Tenants'
       : admin && view === 'settings'
         ? 'Acesso'
-        : sections.find((s) => s.id === view)?.label || 'Conexões';
+        : view === 'overview'
+          ? 'Visão geral'
+          : view === 'payments'
+            ? 'Pagamentos'
+            : sections.find((s) => s.id === view)?.label || 'Conexões';
   const tenants = session.state.tenants;
   const filtered = tenants.filter(
     (t) =>
@@ -285,7 +297,7 @@ export default function Panel({
             <>
               <button
                 className={
-                  !['settings', 'users', 'payments'].includes(view)
+                  !['settings', 'overview', 'payments'].includes(view)
                     ? 'active'
                     : ''
                 }
@@ -294,13 +306,7 @@ export default function Panel({
                 <Users size={19} />
                 Tenants
               </button>
-              <button
-                className={view === 'users' ? 'active' : ''}
-                onClick={() => navigate('users')}
-              >
-                <UserRound size={19} />
-                Usuários
-              </button>
+
               <button
                 className={view === 'payments' ? 'active' : ''}
                 onClick={() => navigate('payments')}
@@ -317,7 +323,25 @@ export default function Panel({
               </button>
             </>
           ) : (
-            sections.map(({ id, label, icon: Icon, href }) =>
+            [
+              ...(managing
+                ? [
+                    {
+                      id: 'overview',
+                      label: 'Visão geral',
+                      icon: ShieldCheck,
+                      href: '',
+                    },
+                    {
+                      id: 'payments',
+                      label: 'Pagamentos',
+                      icon: ShieldCheck,
+                      href: '',
+                    },
+                  ]
+                : []),
+              ...sections,
+            ].map(({ id, label, icon: Icon, href }) =>
               managing ? (
                 <button
                   key={id}
@@ -397,7 +421,7 @@ export default function Panel({
             </div>
             {admin &&
               !tenant &&
-              !['settings', 'users', 'payments'].includes(view) && (
+              !['settings', 'overview', 'payments'].includes(view) && (
                 <button
                   className="gt-button gt-primary"
                   onClick={() => {
@@ -421,26 +445,19 @@ export default function Panel({
               {notice}
             </output>
           )}
-          {admin && !tenant && view === 'users' && (
-            <AdminUsers
-              tenants={tenants}
-              onAccess={(t) => {
-                setSelectedId(t.id);
-                navigate('settings', t.id);
-              }}
-            />
-          )}
+
           {admin && !tenant && view === 'payments' && (
             <AdminPayments
               tenants={tenants}
               records={session.state.billing || []}
               busy={busy}
+              defaultPlan={session.state.settings?.defaultPlan}
               onSave={(value) => save('billing', value)}
             />
           )}
           {admin &&
             !tenant &&
-            !['settings', 'users', 'payments'].includes(view) && (
+            !['settings', 'overview', 'payments'].includes(view) && (
               <>
                 <div
                   className="gt-admin-overview"
@@ -466,27 +483,34 @@ export default function Panel({
                       ],
                     ] as const
                   ).map(([id, label, count]) => (
-                    <button
-                      key={id}
-                      className={`gt-admin-metric ${statusFilter === id ? 'is-selected' : ''}`}
-                      aria-pressed={statusFilter === id}
-                      onClick={() => setStatusFilter(id)}
-                    >
+                    <div key={id} className="gt-admin-metric">
+                      {id === 'all' ? (
+                        <Users size={20} />
+                      ) : id === 'active' ? (
+                        <ShieldCheck size={20} />
+                      ) : id === 'suspended' ? (
+                        <CirclePause size={20} />
+                      ) : (
+                        <Globe size={20} />
+                      )}
                       <span>{label}</span>
                       <strong>{count}</strong>
-                    </button>
+                    </div>
                   ))}
                 </div>
-                <AdminOverview
-                  tenants={tenants}
-                  onOpen={openTenant}
-                  onConnections={(t) => {
-                    setSelectedId(t.id);
-                    navigate('connections', t.id);
-                  }}
-                  onCreate={() => setCreating(true)}
-                />
                 <div className="gt-list-toolbar">
+                  <select
+                    aria-label="Filtrar tenants"
+                    value={statusFilter}
+                    onChange={(e) =>
+                      setStatusFilter(e.target.value as typeof statusFilter)
+                    }
+                  >
+                    <option value="all">Todos</option>
+                    <option value="active">Ativos</option>
+                    <option value="suspended">Suspensos</option>
+                    <option value="pending">Sem domínio</option>
+                  </select>
                   <span>
                     {session.state.tenants.length} tenants{' '}
                     <span className="gt-muted">
@@ -560,7 +584,7 @@ export default function Panel({
                           className="gt-button"
                           onClick={() => openTenant(t)}
                         >
-                          Ver plataforma
+                          Gerenciar tenant
                           <ChevronRight size={16} />
                         </button>
                       </div>
@@ -647,7 +671,10 @@ export default function Panel({
                 </p>
               </div>
               <div className="gt-connection-grid">
-                {providers.map((provider) => {
+                {(admin
+                  ? providers
+                  : session.state.settings?.enabledProviders || providers
+                ).map((provider) => {
                   const enabled = tenant.connections.includes(provider);
                   return (
                     <article className="gt-card gt-connection" key={provider}>
@@ -672,7 +699,14 @@ export default function Panel({
                           <input
                             type="checkbox"
                             checked={enabled}
-                            disabled={busy}
+                            disabled={
+                              busy ||
+                              (!enabled &&
+                                !(
+                                  session.state.settings?.enabledProviders ||
+                                  providers
+                                ).includes(provider))
+                            }
                             onChange={(e) =>
                               void save('tenant', {
                                 ...tenant,
@@ -714,6 +748,26 @@ export default function Panel({
               </div>
             </>
           )}
+          {managing && view === 'overview' && (
+            <TenantOverview
+              tenant={tenant}
+              records={(session.state.billing || []).filter(
+                (r) => r.tenantId === tenant.id,
+              )}
+              onPayments={() => navigate('payments')}
+            />
+          )}
+          {managing && view === 'payments' && (
+            <AdminPayments
+              tenants={[tenant]}
+              records={(session.state.billing || []).filter(
+                (r) => r.tenantId === tenant.id,
+              )}
+              busy={busy}
+              onSave={(v) => save('billing', v)}
+              defaultPlan={session.state.settings?.defaultPlan}
+            />
+          )}
           {tenant && view === 'platform' && (
             <PlatformEditor
               key={tenant.id}
@@ -734,7 +788,17 @@ export default function Panel({
                   onSave={(value) => save('tenant', value)}
                 />
               ) : (
-                <AccountSettings email={session.email} onSaved={load} />
+                <>
+                  {admin && (
+                    <AdminSettings
+                      key={session.revision}
+                      settings={session.state.settings}
+                      busy={busy}
+                      onSave={(v) => save('settings', v)}
+                    />
+                  )}
+                  <AccountSettings email={session.email} onSaved={load} />
+                </>
               )}
             </>
           )}

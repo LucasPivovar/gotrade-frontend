@@ -142,6 +142,9 @@ export const availableBots: TradingBotDefinition[] = [
 ];
 
 export type PlatformSettings = {
+  enabledProviders?: string[];
+  supportEmail?: string;
+  defaultPlan?: string;
   allowedBots: string[];
   masterDomain: string;
   maintenanceMode: boolean;
@@ -165,6 +168,7 @@ export const defaultPlatformSettings: PlatformSettings = {
 };
 
 export type State = {
+  demoVersion?: number;
   billing?: BillingRecord[];
   tenants: Tenant[];
   checkouts: Checkout[];

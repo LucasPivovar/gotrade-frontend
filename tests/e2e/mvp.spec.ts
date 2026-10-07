@@ -79,6 +79,7 @@ test('admin manages tenants, edits platform identity and reloads saved data', as
     .getByLabel('E-mail do responsável')
     .fill(`${crypto.randomUUID()}@example.test`);
   await dialog.getByRole('button', { name: 'Criar tenant' }).click();
+  await page.getByRole('button', { name: 'Plataforma', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Plataforma', exact: true }),
   ).toBeVisible();
@@ -482,7 +483,7 @@ test('admin filters tenants and confirms suspension without losing platform data
     .filter({ hasText: 'Admin Gestão Simples' });
   await expect(row).toHaveCount(1);
   await expect(row).toContainText('Domínio cadastrado:');
-  await page.getByRole('button', { name: /Sem domínio/ }).click();
+  await page.getByLabel('Filtrar tenants').selectOption('pending');
   await expect(row).toHaveCount(0);
   await page.getByRole('button', { name: 'Limpar filtros' }).click();
   await page.getByLabel('Buscar tenants').fill('Admin Gestão Simples');
@@ -540,10 +541,9 @@ test('admin user directory and demo payments persist across navigation', async (
   await login(page);
   const tenant = await seedTenant(page.request, 'Tenant Financeiro');
   await page.reload();
-  await page.getByRole('button', { name: 'Usuários', exact: true }).click();
-  await page.getByLabel('Buscar usuários').fill('Tenant Financeiro');
-  await expect(page.locator('tbody tr')).toHaveCount(1);
-  await expect(page.locator('tbody')).toContainText(tenant.email);
+  await expect(
+    page.getByRole('button', { name: 'Usuários', exact: true }),
+  ).toHaveCount(0);
   await page.getByRole('button', { name: 'Pagamentos', exact: true }).click();
   await page.getByRole('button', { name: 'Novo registro' }).click();
   const dialog = page.getByRole('dialog');
@@ -570,6 +570,51 @@ test('admin user directory and demo payments persist across navigation', async (
   ).toBe(14990);
   await page.screenshot({
     path: 'outputs/gotrade-payments.png',
+    fullPage: true,
+  });
+});
+
+test('admin connection catalog and tenant overview preserve configured settings', async ({
+  page,
+}) => {
+  await login(page);
+  const tenant = await seedTenant(page.request, 'Tenant Catálogo');
+  await page.goto('/settings');
+  await page
+    .locator('.gt-setting-toggle')
+    .filter({ hasText: 'Bybit' })
+    .getByRole('checkbox')
+    .uncheck();
+  await page.getByLabel('E-mail de suporte').fill('suporte@example.test');
+  await page.getByLabel('Plano sugerido').fill('Premium mensal');
+  await page.getByRole('button', { name: 'Salvar configurações' }).click();
+  await expect(page.getByRole('status')).toContainText('Alterações salvas');
+  await page.reload();
+  await expect(
+    page
+      .locator('.gt-setting-toggle')
+      .filter({ hasText: 'Bybit' })
+      .getByRole('checkbox'),
+  ).not.toBeChecked();
+  await expect(page.getByLabel('Plano sugerido')).toHaveValue('Premium mensal');
+  await page.goto(`/tenants?tenant=${tenant.id}&section=overview`);
+  await expect(
+    page.getByRole('heading', { name: `Acompanhamento de ${tenant.name}` }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Abrir plataforma' }),
+  ).toHaveAttribute('href', `/prototipo/app?tenant=${tenant.id}`);
+  await page.getByRole('button', { name: 'Ver histórico completo' }).click();
+  await page.getByRole('button', { name: 'Novo registro' }).click();
+  await expect(
+    page.getByRole('dialog').getByLabel('Plano', { exact: true }),
+  ).toHaveValue('Premium mensal');
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Cancelar' })
+    .click();
+  await page.screenshot({
+    path: 'outputs/gotrade-tenant-payments.png',
     fullPage: true,
   });
 });

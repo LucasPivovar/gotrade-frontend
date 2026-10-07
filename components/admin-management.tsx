@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Plus, Search, Users, CreditCard } from 'lucide-react';
+import { Plus, Search, CreditCard } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,140 +18,16 @@ const labels = {
   canceled: 'Cancelado',
   overdue: 'Atrasado',
 };
-export function AdminUsers({
-  tenants,
-  onAccess,
-}: {
-  tenants: Tenant[];
-  onAccess: (tenant: Tenant) => void;
-}) {
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
-  const users = tenants.flatMap((t) => [
-    {
-      id: `owner-${t.id}`,
-      name: t.admin,
-      email: t.email,
-      role: 'Responsável',
-      status: t.status === 'active' ? 'active' : 'suspended',
-      tenant: t,
-    },
-    ...(t.users || [])
-      .filter((u) => u.email.toLowerCase() !== t.email.toLowerCase())
-      .map((u) => ({
-        ...u,
-        role: {
-          admin: 'Administrador',
-          operator: 'Operador',
-          finance: 'Financeiro',
-          support: 'Suporte',
-        }[u.role],
-        status: t.status === 'suspended' ? 'suspended' : u.status,
-        tenant: t,
-      })),
-  ]);
-  const filtered = users.filter(
-    (u) =>
-      `${u.name} ${u.email} ${u.tenant.name}`
-        .toLowerCase()
-        .includes(search.toLowerCase()) &&
-      (filter === 'all' || u.status === filter),
-  );
-  return (
-    <section className="gt-card gt-management">
-      <div className="gt-management-heading">
-        <Users size={22} />
-        <div>
-          <h2>Usuários vinculados</h2>
-          <p>
-            Responsáveis e membros cadastrados em cada tenant. O status
-            acompanha o cadastro e a operação.
-          </p>
-        </div>
-        <strong>{users.length}</strong>
-      </div>
-      <div className="gt-management-toolbar">
-        <label className="gt-search">
-          <Search size={17} />
-          <input
-            aria-label="Buscar usuários"
-            placeholder="Nome, e-mail ou plataforma"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-        <select
-          aria-label="Filtrar usuários"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        >
-          <option value="all">Todos os status</option>
-          <option value="active">Ativos</option>
-          <option value="invited">Convidados</option>
-          <option value="suspended">Suspensos</option>
-        </select>
-      </div>
-      <div className="gt-table-scroll">
-        <table className="gt-management-table">
-          <thead>
-            <tr>
-              <th>Usuário</th>
-              <th>Plataforma</th>
-              <th>Perfil</th>
-              <th>Status</th>
-              <th>Acesso</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((u) => (
-              <tr key={u.id}>
-                <td>
-                  <strong>{u.name || 'Responsável'}</strong>
-                  <small>{u.email}</small>
-                </td>
-                <td>{u.tenant.name}</td>
-                <td>{u.role}</td>
-                <td>
-                  <span
-                    className={`gt-status ${u.status === 'active' ? 'is-active' : ''}`}
-                  >
-                    {u.status === 'active'
-                      ? 'Ativo'
-                      : u.status === 'invited'
-                        ? 'Convidado'
-                        : 'Suspenso'}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="gt-button"
-                    onClick={() => onAccess(u.tenant)}
-                  >
-                    Gerenciar tenant
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {!filtered.length && (
-        <div className="gt-admin-placeholder">
-          Nenhum usuário encontrado. Cadastre um tenant para vincular o
-          responsável.
-        </div>
-      )}
-    </section>
-  );
-}
 export function AdminPayments({
   tenants,
   records,
   busy,
   onSave,
+  defaultPlan,
 }: {
   tenants: Tenant[];
   records: BillingRecord[];
+  defaultPlan?: string;
   busy: boolean;
   onSave: (value: BillingRecord) => Promise<boolean>;
 }) {
@@ -170,7 +46,7 @@ export function AdminPayments({
     setEditing({
       id: crypto.randomUUID(),
       tenantId: tenants[0]?.id || '',
-      plan: 'Mensal',
+      plan: defaultPlan || 'Essencial mensal',
       amountCents: 9900,
       due: new Date().toISOString().slice(0, 10),
       status: 'pending',
@@ -186,12 +62,8 @@ export function AdminPayments({
       </div>
       <div className="gt-admin-overview">
         {(['paid', 'pending', 'overdue', 'canceled'] as const).map((status) => (
-          <button
-            key={status}
-            className={`gt-admin-metric ${filter === status ? 'is-selected' : ''}`}
-            aria-pressed={filter === status}
-            onClick={() => setFilter(filter === status ? 'all' : status)}
-          >
+          <div key={status} className="gt-admin-metric">
+            <CreditCard size={20} />
             <span>{labels[status]}</span>
             <strong>
               {money(
@@ -200,7 +72,7 @@ export function AdminPayments({
                   .reduce((sum, r) => sum + r.amountCents, 0),
               )}
             </strong>
-          </button>
+          </div>
         ))}
       </div>
       <section className="gt-card gt-management">
