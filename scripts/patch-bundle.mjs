@@ -18,11 +18,12 @@ const newSplash = 'a.jsx(WlSplashWord,{})';
 export function patchBundleFile(targetPath) {
   if (!existsSync(targetPath)) return false;
   let code = readFileSync(targetPath, 'utf-8');
+  const before = code;
   code = code.replace('className:"muted mono",style:{fontSize:11,marginTop:6,lineHeight:1.5},children:r.map', 'className:"gotrade-protection-steps mono",children:r.map');
   code = code.replace('style:{fontSize:11.5,marginTop:4,lineHeight:1.5},children:[a.jsx("span",{className:"muted",children:"Se o ciclo inteiro perder: "})', 'className:"gotrade-cycle-summary",children:[a.jsx("span",{className:"muted",children:"Perda máxima do ciclo"})');
   code = code.replace('className:"muted",children:[" · ganha $",(i*.8).toFixed(2)," quando fecha"]', 'className:"gotrade-cycle-profit",children:["Ganho por acerto: $",(i*.8).toFixed(2)]');
   code = code.replace('className:"muted",style:{fontSize:11,marginTop:4,lineHeight:1.45},children:"Estimativa com payout de 80%; o valor real usa o payout do ativo. Mais proteções deixam a perda mais rara e mais funda — o acerto necessário para empatar não muda."', 'className:"gotrade-cycle-note",children:"Estimativa com retorno de 80%. O retorno real depende do ativo. Mais proteções aumentam o valor em risco; a taxa de acerto para empatar permanece igual."');
-  const before = code;
+
   code = code.replaceAll('"TradingPro"','"Gotrade"');
 
   // One compact account switch beside the balance, preserving the existing API.
