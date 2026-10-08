@@ -13,7 +13,6 @@ import {
   Users,
   CirclePause,
   Globe,
-  LifeBuoy,
   CreditCard,
   Check,
   ArrowUpRight,
@@ -23,21 +22,17 @@ import { validateApplicationBrand } from '@/lib/application';
 import { applyBrandTheme } from '@/lib/brand-theme';
 import PlatformPreview from '@/components/platform-preview';
 import LogoEditor from '@/components/logo-editor';
-import AdminSettings from '@/components/admin-settings';
-import { AdminPayments } from '@/components/admin-management';
+import TenantFinance from '@/components/tenant-finance';
 import TenantDirectory from '@/components/tenant-directory';
-import SupportCenter from '@/components/support-center';
 import NewTenantModal from '@/components/new-tenant-modal';
 const sections = [
   { id: 'platform', label: 'Plataforma', icon: Palette },
   { id: 'connections', label: 'Conexões', icon: Plug },
-  { id: 'support', label: 'Suporte', icon: LifeBuoy },
+  { id: 'finance', label: 'Financeiro', icon: CreditCard },
   { id: 'settings', label: 'Configurações', icon: Settings },
 ];
 const adminSections = [
   { id: 'tenants', label: 'Tenants', icon: Users },
-  { id: 'payments', label: 'Pagamentos', icon: CreditCard },
-  { id: 'support', label: 'Suporte', icon: LifeBuoy },
   { id: 'settings', label: 'Configurações', icon: Settings },
 ];
 export default function Panel({
@@ -55,9 +50,13 @@ export default function Panel({
   const admin = session?.role === 'admin';
   const tenant = session?.state.tenants.find((t) => t.id === session.tenantId);
   const [view, setView] = useState(
-      initialView === 'connections' && initialSession?.role === 'admin'
-        ? 'tenants'
-        : initialView,
+      (initialSession?.role === 'admin' ? adminSections : sections).some(
+        (s) => s.id === initialView,
+      )
+        ? initialView
+        : initialSession?.role === 'admin'
+          ? 'tenants'
+          : 'platform',
     ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
@@ -95,14 +94,9 @@ export default function Panel({
       const p = new URLSearchParams(location.search);
       const next = p.get('section') || location.pathname.slice(1);
       setView(
-        [
-          'tenants',
-          'payments',
-          'support',
-          'settings',
-          'platform',
-          'connections',
-        ].includes(next)
+        (latest.current?.role === 'admin' ? adminSections : sections)
+          .map((s) => s.id)
+          .includes(next)
           ? next
           : latest.current?.role === 'admin'
             ? 'tenants'
@@ -117,11 +111,7 @@ export default function Panel({
     setView(next);
     setError('');
     setNotice('');
-    window.history.pushState(
-      null,
-      '',
-      admin && next === 'payments' ? '/tenants?section=payments' : `/${next}`,
-    );
+    window.history.pushState(null, '', `/${next}`);
   };
   async function save(action: string, value: unknown) {
     if (!latest.current || busy) return false;
@@ -162,23 +152,6 @@ export default function Panel({
       setBusy(false);
     }
   }
-  async function deliver(id: string) {
-    const t = latest.current?.state.tickets?.find((t) => t.id === id);
-    const reply = t?.replies.at(-1);
-    if (!reply) return 'Resposta salva.';
-    try {
-      const r = await fetch('/api/support/deliver', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticketId: id, replyId: reply.id }),
-      });
-      const d = await r.json();
-      if (d.session) update(d.session);
-      return d.message || d.error || 'Resposta salva.';
-    } catch {
-      return 'Resposta salva. Não foi possível encaminhar o e-mail.';
-    }
-  }
   async function logout() {
     setBusy(true);
     try {
@@ -213,7 +186,7 @@ export default function Panel({
       (statusFilter === 'all' ||
         (statusFilter === 'pending' ? !t.domain : t.status === statusFilter)),
   );
-  const isList = admin && !['payments', 'support', 'settings'].includes(view);
+  const isList = admin && current.id === 'tenants';
   return (
     <div className="gt-shell">
       <aside className="gt-sidebar">
@@ -280,15 +253,13 @@ export default function Panel({
               <p>
                 {isList
                   ? 'Plataformas, responsáveis e situação de cada tenant.'
-                  : view === 'payments'
-                    ? 'Controle os registros de pagamentos dos tenants.'
-                    : view === 'support'
-                      ? 'Converse com a equipe e acompanhe os tickets.'
-                      : view === 'settings'
-                        ? 'Sua conta e as preferências do espaço.'
-                        : view === 'platform'
-                          ? 'Personalize a plataforma com sua marca.'
-                          : 'Meios de conexão disponíveis para sua operação.'}
+                  : view === 'finance'
+                    ? 'Acompanhe seus pagamentos e vencimentos.'
+                    : view === 'settings'
+                      ? 'Gerencie seu e-mail e sua senha.'
+                      : view === 'platform'
+                        ? 'Personalize a plataforma com sua marca.'
+                        : 'Meios de conexão disponíveis para sua operação.'}
               </p>
             </div>
             {isList && (
@@ -368,44 +339,17 @@ export default function Panel({
               </div>
               <TenantDirectory
                 tenants={filtered}
-                records={session.state.billing || []}
                 catalog={catalog}
                 busy={busy}
                 onSave={(t) => save('tenant', t)}
               />
             </>
           )}
-          {admin && view === 'payments' && (
-            <AdminPayments
-              tenants={tenants}
-              records={session.state.billing || []}
-              busy={busy}
-              onSave={(v) => save('billing', v)}
-            />
-          )}
-          {view === 'support' && (
-            <SupportCenter
-              admin={!!admin}
-              tickets={session.state.tickets || []}
-              tenants={tenants}
-              telegram={session.state.settings?.telegramUrl}
-              busy={busy}
-              onSave={save}
-              onDeliver={deliver}
-            />
+          {!admin && view === 'finance' && (
+            <TenantFinance records={session.state.billing || []} />
           )}
           {view === 'settings' && (
-            <div className={admin ? 'gt-account-layout' : undefined}>
-              <AccountSettings email={session.email} onSaved={load} />
-              {admin && (
-                <AdminSettings
-                  key={session.revision}
-                  settings={session.state.settings}
-                  busy={busy}
-                  onSave={(v) => save('settings', v)}
-                />
-              )}
-            </div>
+            <AccountSettings email={session.email} onSaved={load} />
           )}
           {!admin && tenant && view === 'platform' && (
             <PlatformEditor
@@ -437,7 +381,7 @@ export default function Panel({
                     <p>
                       {enabled
                         ? 'Disponível para sua plataforma.'
-                        : 'Solicite a liberação ao administrador pelo suporte.'}
+                        : 'Esta conexão ainda não foi liberada pelo administrador.'}
                     </p>
                     {enabled ? (
                       <a
@@ -449,14 +393,7 @@ export default function Panel({
                         Abrir plataforma
                         <ArrowUpRight size={16} />
                       </a>
-                    ) : (
-                      <button
-                        className="gt-button"
-                        onClick={() => navigate('support')}
-                      >
-                        Solicitar acesso
-                      </button>
-                    )}
+                    ) : null}
                   </section>
                 );
               })}

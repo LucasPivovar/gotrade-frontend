@@ -1,5 +1,4 @@
-import WorkspacePage from '@/components/workspace-page';
-export const dynamic = 'force-dynamic';
+import { redirect } from 'next/navigation';
 export default function Page() {
-  return <WorkspacePage view="support" />;
+  redirect('/');
 }

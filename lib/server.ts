@@ -59,7 +59,9 @@ export async function workspace() {
 export function scoped(w: Awaited<ReturnType<typeof workspace>>) {
   return {
     ...w.state,
-    billing: w.role === 'admin' ? w.state.billing || [] : [],
+    billing: (w.state.billing || []).filter(
+      (r) => w.role === 'admin' || r.tenantId === w.tenantId,
+    ),
     purchaseLinks: w.role === 'admin' ? w.state.purchaseLinks || [] : [],
     tickets: (w.state.tickets || []).filter(
       (t) => w.role === 'admin' || t.tenantId === w.tenantId,

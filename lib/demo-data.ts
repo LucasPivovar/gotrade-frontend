@@ -1,7 +1,7 @@
 import type { State } from './model';
 import { createApplication } from './application';
 export function addDemoData(state: State) {
-  if (state.demoVersion === 3) return state;
+  if (state.demoVersion === 4) return state;
   const names = [
     'Aurora Trade',
     'Nexus Invest',
@@ -62,6 +62,25 @@ export function addDemoData(state: State) {
     primary.name = 'GoTrade';
     primary.color = '#4fbb83';
   }
+  if (primary) {
+    state.billing ||= [];
+    for (const [i, status] of (
+      ['paid', 'paid', 'pending'] as const
+    ).entries()) {
+      const id = '30000000-0000-4000-8000-00000000000' + (i + 5);
+      if (!state.billing.some((r) => r.id === id))
+        state.billing.push({
+          id,
+          tenantId: primary.id,
+          plan: 'Licença GoTrade',
+          amountCents: 19900,
+          due: new Date(Date.now() + (i === 2 ? 7 : -(i + 1) * 30) * 86400000)
+            .toISOString()
+            .slice(0, 10),
+          status,
+        });
+    }
+  }
   const sample = state.tenants.find(
     (t) => t.id === '10000000-0000-4000-8000-000000000002',
   );
@@ -94,6 +113,6 @@ export function addDemoData(state: State) {
             ]
           : [],
       });
-  state.demoVersion = 3;
+  state.demoVersion = 4;
   return state;
 }

@@ -6,7 +6,7 @@ import { workspace, scoped } from '@/lib/server';
 export default async function WorkspacePage({
   view,
 }: {
-  view: 'connections' | 'platform' | 'settings' | 'tenants' | 'support';
+  view: 'connections' | 'platform' | 'settings' | 'tenants' | 'finance';
 }) {
   let user;
   try {

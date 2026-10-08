@@ -36,7 +36,7 @@ function useLoginForm(invite?: string) {
         '/connections',
         '/platform',
         '/settings',
-        '/support',
+        '/finance',
         '/tenants',
       ].includes(target)
       ? target
@@ -66,8 +66,8 @@ function useLoginForm(invite?: string) {
         throw Error(account.error || 'Não foi possível abrir sua conta.');
       const admin = account.role === 'admin';
       const allowed = admin
-        ? ['/tenants', '/settings', '/support']
-        : ['/platform', '/connections', '/settings', '/support'];
+        ? ['/tenants', '/settings']
+        : ['/platform', '/connections', '/settings', '/finance'];
       window.location.assign(
         allowed.includes(target) ? target : admin ? '/tenants' : '/platform',
       );

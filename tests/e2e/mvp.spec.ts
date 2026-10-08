@@ -351,46 +351,7 @@ test('Rotas diretas e fallbacks preservam o destino e o status', async ({
   expect(await unknown.text()).toContain('Página não encontrada');
 });
 
-test('admin user directory and demo payments persist across navigation', async ({
-  page,
-}) => {
-  await login(page);
-  const tenant = await seedTenant(page.request, 'Tenant Financeiro');
-  await page.reload();
-  await expect(
-    page.getByRole('button', { name: 'Usuários', exact: true }),
-  ).toHaveCount(0);
-  await page.getByRole('button', { name: 'Pagamentos', exact: true }).click();
-  await page.getByRole('button', { name: 'Novo registro' }).click();
-  const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Tenant', { exact: true }).selectOption(tenant.id);
-  await dialog.getByLabel('Plano', { exact: true }).fill('Pro mensal');
-  await dialog.getByLabel('Valor (R$)', { exact: true }).fill('149.90');
-  await dialog.getByLabel('Vencimento', { exact: true }).fill('2025-01-01');
-  await dialog.getByRole('button', { name: 'Salvar registro' }).click();
-  await expect(dialog).toHaveCount(0);
-  await expect(page.locator('tbody')).toContainText('Atrasado');
-  await page.reload();
-  await expect(
-    page.getByRole('heading', { name: 'Pagamentos', exact: true }),
-  ).toBeVisible();
-  await expect(page.locator('tbody')).toContainText('Pro mensal');
-  await page.locator('tbody').getByRole('button', { name: 'Editar' }).click();
-  await dialog.getByLabel('Situação', { exact: true }).selectOption('paid');
-  await dialog.getByRole('button', { name: 'Salvar registro' }).click();
-  await expect(page.locator('tbody')).toContainText('Pago');
-  expect(
-    (await state(page.request)).state.billing?.find(
-      (r) => r.tenantId === tenant.id,
-    )?.amountCents,
-  ).toBe(14990);
-  await page.screenshot({
-    path: 'outputs/gotrade-payments.png',
-    fullPage: true,
-  });
-});
-
-test('tenant modal unifies payments, access and connection permissions', async ({
+test('tenant modal shows overview, access and connection permissions', async ({
   page,
 }) => {
   await login(page);
@@ -417,9 +378,9 @@ test('tenant modal unifies payments, access and connection permissions', async (
   await expect(page.getByText('Gerenciar acesso', { exact: true })).toHaveCount(
     0,
   );
-  await d.getByRole('button', { name: 'Pagamentos', exact: true }).click();
-  await expect(d.locator('tbody')).toContainText('Licença');
-  await expect(d).toContainText('Pago');
+  await expect(
+    d.getByRole('button', { name: 'Pagamentos', exact: true }),
+  ).toHaveCount(0);
   await d.getByRole('button', { name: 'Acesso e conexões' }).click();
   await d.getByLabel('Adicionar conexão').selectOption('XGlobal');
   await expect(d.locator('.gt-connection-box')).toContainText('XGlobal');
@@ -462,23 +423,23 @@ test('settings and new tenant form persist; legacy checkout price stays protecte
   await expect(
     page.getByRole('heading', { name: 'Minha conta' }),
   ).toBeVisible();
-  await page.getByLabel('Valor para ser tenant (R$)').fill('3999.90');
-  await page
-    .getByLabel('Suporte Telegram')
-    .fill('https://t.me/gotrade_suporte');
-  await page
-    .locator('.gt-setting-toggle')
-    .filter({ hasText: 'XR' })
-    .getByRole('checkbox')
-    .uncheck();
-  await page.getByRole('button', { name: 'Salvar configurações' }).click();
   await expect(
-    page.getByRole('status').filter({ hasText: 'Alterações salvas' }),
-  ).toBeVisible();
+    page.getByRole('heading', { name: 'Configuração de conexões' }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel('Valor para ser tenant (R$)')).toHaveCount(0);
+  const prefs = await state(page.request);
+  expect(
+    (
+      await save(page.request, prefs, 'settings', {
+        ...prefs.state.settings,
+        enabledProviders: ['XGlobal', 'Bybit', 'Admiral'],
+        supportEmail: '',
+        telegramUrl: '',
+        tenantPriceCents: 399990,
+      })
+    ).status(),
+  ).toBe(200);
   await page.reload();
-  await expect(page.getByLabel('Valor para ser tenant (R$)')).toHaveValue(
-    '3999.9',
-  );
   await page.getByRole('button', { name: 'Tenants', exact: true }).click();
   await page.getByRole('button', { name: 'Novo tenant', exact: true }).click();
   const modal = page.getByRole('dialog');
@@ -557,23 +518,41 @@ test('settings and new tenant form persist; legacy checkout price stays protecte
   await ctx.close();
 });
 
-test('tenant platform is static and tickets are isolated with admin replies', async ({
+test('tenant finance is isolated, read-only and navigates without reloading', async ({
   page,
   browser,
 }) => {
   await login(page);
-  const t = await seedTenant(page.request, 'Suporte Tenant');
-  const other = await seedTenant(page.request, 'Suporte Outro');
-  const admin = await state(page.request);
-  expect(
-    (
-      await save(page.request, admin, 'ticket', {
-        tenantId: other.id,
-        subject: 'Privado outro',
-        message: 'Mensagem privada',
-      })
-    ).status(),
-  ).toBe(200);
+  const t = await seedTenant(page.request, 'Financeiro Tenant');
+  const other = await seedTenant(page.request, 'Financeiro Outro');
+  for (const [tenantId, plan, amountCents, status] of [
+    [t.id, 'Minha licença', 14990, 'paid'],
+    [t.id, 'Minha pendência', 9900, 'pending'],
+    [other.id, 'Cobrança privada', 89000, 'paid'],
+  ] as const) {
+    expect(
+      (
+        await save(page.request, await state(page.request), 'billing', {
+          id: crypto.randomUUID(),
+          tenantId,
+          plan,
+          amountCents,
+          due: '2099-12-01',
+          status,
+        })
+      ).status(),
+    ).toBe(200);
+  }
+  await page.reload();
+  const adminNav = page.getByRole('navigation', { name: 'Menu principal' });
+  await expect(adminNav.getByRole('button')).toHaveCount(2);
+  await expect(adminNav.getByText(/Suporte|Pagamentos|Financeiro/)).toHaveCount(
+    0,
+  );
+  await page.goto('/tenants?section=payments');
+  await expect(
+    page.getByRole('heading', { name: 'Tenants', exact: true }),
+  ).toBeVisible();
   const invite = await page.request.post('/api/auth/invite', {
     headers: { origin },
     data: { tenantId: t.id },
@@ -588,84 +567,47 @@ test('tenant platform is static and tickets are isolated with admin replies', as
   ).toBeVisible();
   await expect(p.locator('.gt-static-preview img')).toBeVisible();
   await expect(p.locator('.gt-live-preview iframe')).toHaveCount(0);
-  expect(
-    await p
-      .locator('.gt-static-preview img')
-      .evaluate((e: HTMLImageElement) => e.naturalWidth),
-  ).toBeGreaterThan(0);
-  await p.getByLabel('Valor do checkout (R$)').fill('2200');
-  await p
-    .getByLabel('Webhook', { exact: true })
-    .fill('https://example.test/hooks');
-  await p
-    .getByRole('button', { name: 'Salvar alterações', exact: true })
-    .click();
-  await expect(
-    p.getByRole('status').filter({ hasText: 'Alterações salvas' }),
-  ).toBeVisible();
-  await p.reload();
-  await expect(p.getByLabel('Valor do checkout (R$)')).toHaveValue('2200');
-  await expect(p.getByLabel('Webhook', { exact: true })).toHaveValue(
-    'https://example.test/hooks',
-  );
   await p.evaluate(() => {
     (window as unknown as { marker: string }).marker = 'same-document';
   });
   const nav = p.getByRole('navigation', { name: 'Menu principal' });
-  await nav.getByRole('link', { name: 'Suporte', exact: true }).click();
+  await expect(nav.getByRole('link', { name: 'Suporte' })).toHaveCount(0);
+  await nav.getByRole('link', { name: 'Financeiro' }).click();
   expect(
     await p.evaluate(() => (window as unknown as { marker: string }).marker),
   ).toBe('same-document');
   await expect(p.locator('.gt-loading')).toHaveCount(0);
-  await p.getByRole('button', { name: 'Novo ticket' }).click();
-  await p.getByLabel('Assunto').fill('Minha conexão');
-  await p
-    .getByLabel('Mensagem', { exact: true })
-    .fill('Preciso de uma orientação');
-  await p.getByRole('button', { name: 'Enviar ticket' }).click();
-  await expect(p.locator('.gt-ticket-row')).toContainText('Minha conexão');
-  const session = await state(ctx.request);
-  expect(
-    session.state.tickets?.some((x) => x.subject === 'Privado outro'),
-  ).toBe(false);
-  expect((await save(ctx.request, session, 'purchaseLink', {})).status()).toBe(
-    403,
-  );
-  expect(
-    (
-      await save(ctx.request, session, 'ticketReply', {
-        id: session.state.tickets![0].id,
-        message: 'Ataque',
-      })
-    ).status(),
-  ).toBe(403);
-  const brand = await (
-    await ctx.request.get(`/api/branding?tenant=${t.id}`)
-  ).json();
-  expect(brand.webhook).toBeUndefined();
-  await page.reload();
-  await page.getByRole('button', { name: 'Suporte', exact: true }).click();
-  await page.getByRole('button', { name: /Minha conexão/ }).click();
-  await page.getByLabel('Responder ticket').fill('Sua conexão foi revisada.');
-  await page
-    .getByRole('button', { name: 'Salvar e encaminhar resposta' })
-    .click();
-  await expect(page.getByRole('dialog')).toContainText('aguarda configuração');
+  await expect(p.locator('tbody')).toContainText('Minha licença');
+  await expect(p.locator('tbody')).not.toContainText('Cobrança privada');
+  await expect(p.locator('.gt-admin-overview')).toContainText('149,90');
+  await p.getByLabel('Filtrar pagamentos').selectOption('pending');
+  await expect(p.locator('tbody tr')).toHaveCount(1);
+  await expect(p.locator('tbody')).toContainText('Minha pendência');
   await p.reload();
-  await p.getByRole('button', { name: /Minha conexão/ }).click();
-  await expect(p.getByRole('dialog')).toContainText(
-    'Sua conexão foi revisada.',
-  );
+  await expect(
+    p.getByRole('heading', { name: 'Financeiro', exact: true }),
+  ).toBeVisible();
+  const session = await state(ctx.request);
+  expect(session.state.billing?.length).toBe(2);
+  expect(session.state.billing?.every((r) => r.tenantId === t.id)).toBe(true);
   expect(
     (
-      await ctx.request.post('/api/support/deliver', {
-        headers: { origin },
-        data: { ticketId: session.state.tickets![0].id, replyId: 'invalid' },
+      await save(ctx.request, session, 'billing', {
+        ...session.state.billing![0],
+        status: 'canceled',
       })
     ).status(),
   ).toBe(403);
-  await page.screenshot({
-    path: 'outputs/gotrade-suporte.png',
+  await p.getByRole('link', { name: 'Configurações', exact: true }).click();
+  await expect(p.getByRole('heading', { name: 'Minha conta' })).toBeVisible();
+  await expect(p.locator('.gt-account-settings')).toHaveCount(1);
+  await p.goto('/support');
+  await expect(
+    p.getByRole('heading', { name: 'Plataforma', exact: true }),
+  ).toBeVisible();
+  await p.goto('/finance');
+  await p.screenshot({
+    path: 'outputs/gotrade-tenant-finance.png',
     fullPage: true,
   });
   await ctx.close();

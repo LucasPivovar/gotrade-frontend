@@ -1,13 +1,6 @@
 'use client';
 import { useState } from 'react';
-import {
-  MoreHorizontal,
-  ArrowUpRight,
-  Users,
-  Globe,
-  Plug,
-  CreditCard,
-} from 'lucide-react';
+import { MoreHorizontal, ArrowUpRight, Users, Globe, Plug } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,19 +8,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import type { Tenant, BillingRecord } from '@/lib/model';
-import { billingStatus } from '@/lib/billing';
-const money = (n: number) =>
-  (n / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import type { Tenant } from '@/lib/model';
 export default function TenantDirectory({
   tenants,
-  records,
   catalog,
   busy,
   onSave,
 }: {
   tenants: Tenant[];
-  records: BillingRecord[];
   catalog: string[];
   busy: boolean;
   onSave: (t: Tenant) => Promise<boolean>;
@@ -37,9 +25,6 @@ export default function TenantDirectory({
     [error, setError] = useState(''),
     [saved, setSaved] = useState(false);
   const actual = tenants.find((t) => t.id === selected?.id) || selected;
-  const payments = records
-    .filter((r) => r.tenantId === selected?.id)
-    .sort((a, b) => b.due.localeCompare(a.due));
   const save = async () => {
     setSaved(false);
     if (selected && (await onSave(selected))) {
@@ -112,7 +97,6 @@ export default function TenantDirectory({
           <div className="gt-modal-tabs">
             {[
               ['overview', 'Visão geral'],
-              ['payments', 'Pagamentos'],
               ['access', 'Acesso e conexões'],
             ].map(([id, label]) => (
               <button
@@ -135,9 +119,9 @@ export default function TenantDirectory({
                       <strong>{actual.clientCount ?? '—'}</strong>
                     </div>
                     <div className="gt-admin-metric">
-                      <CreditCard size={20} />
-                      <span>Pagamentos registrados</span>
-                      <strong>{payments.length}</strong>
+                      <Plug size={20} />
+                      <span>Conexões liberadas</span>
+                      <strong>{actual.connections.length}</strong>
                     </div>
                   </div>
                   <dl className="gt-detail-list">
@@ -179,65 +163,6 @@ export default function TenantDirectory({
                     <small className="gt-muted">
                       Quantidade de clientes fictícia nesta amostra.
                     </small>
-                  )}
-                </>
-              )}
-              {tab === 'payments' && (
-                <>
-                  <div className="gt-order-total">
-                    <span>Total registrado como pago</span>
-                    <strong>
-                      {money(
-                        payments
-                          .filter((r) => r.status === 'paid')
-                          .reduce((n, r) => n + r.amountCents, 0),
-                      )}
-                    </strong>
-                  </div>
-                  <div className="gt-table-scroll">
-                    <table className="gt-management-table">
-                      <thead>
-                        <tr>
-                          <th>Plano</th>
-                          <th>Valor</th>
-                          <th>Vencimento</th>
-                          <th>Situação</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {payments.map((r) => (
-                          <tr key={r.id}>
-                            <td>{r.plan}</td>
-                            <td>{money(r.amountCents)}</td>
-                            <td>
-                              {new Date(r.due + 'T12:00:00').toLocaleDateString(
-                                'pt-BR',
-                              )}
-                            </td>
-                            <td>
-                              {
-                                {
-                                  paid: 'Pago',
-                                  pending: 'Pendente',
-                                  overdue: 'Atrasado',
-                                  canceled: 'Cancelado',
-                                }[
-                                  billingStatus(
-                                    r,
-                                    new Date().toLocaleDateString('en-CA'),
-                                  )
-                                ]
-                              }
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {!payments.length && (
-                    <p className="gt-admin-placeholder">
-                      Nenhum pagamento registrado para este tenant.
-                    </p>
                   )}
                 </>
               )}
