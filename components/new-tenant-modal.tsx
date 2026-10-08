@@ -24,7 +24,6 @@ export default function NewTenantModal({
 }) {
   const [name, setName] = useState(''),
     [email, setEmail] = useState(''),
-    [phone, setPhone] = useState(''),
     [platform, setPlatform] = useState(''),
     [error, setError] = useState('');
   return (
@@ -54,13 +53,11 @@ export default function NewTenantModal({
                 ),
                 admin: name.trim(),
                 email: email.trim().toLowerCase(),
-                phone: phone.trim(),
               };
               validateTenant(tenant);
               if (await onSave(tenant)) {
                 setName('');
                 setEmail('');
-                setPhone('');
                 setPlatform('');
                 onClose();
               } else
@@ -95,18 +92,6 @@ export default function NewTenantModal({
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
-          <label>
-            Telefone
-            <input
-              required
-              type="tel"
-              maxLength={25}
-              autoComplete="tel"
-              placeholder="(11) 99999-9999"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
             />
           </label>
           <label>

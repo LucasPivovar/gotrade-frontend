@@ -449,7 +449,8 @@ test('settings and new tenant form persist; legacy checkout price stays protecte
   ).toHaveCount(0);
   await modal.getByLabel('Nome', { exact: true }).fill('Camila Teste');
   await modal.getByLabel('E-mail', { exact: true }).fill(email);
-  await modal.getByLabel('Telefone', { exact: true }).fill('(11) 99999-9999');
+  await expect(modal.getByLabel('Telefone', { exact: true })).toHaveCount(0);
+  await expect(modal.locator('input')).toHaveCount(3);
   await modal
     .getByLabel('Nome da plataforma', { exact: true })
     .fill('Camila Trade');
@@ -463,9 +464,9 @@ test('settings and new tenant form persist; legacy checkout price stays protecte
   )!;
   expect(created.name).toBe('Camila Trade');
   expect(created.admin).toBe('Camila Teste');
-  expect(created.phone).toBe('(11) 99999-9999');
+  expect(created.phone).toBeUndefined();
   await page.getByRole('button', { name: 'Opções de Camila Trade' }).click();
-  await expect(modal).toContainText('(11) 99999-9999');
+  await expect(modal).toContainText('Camila Teste');
   await modal.getByRole('button', { name: 'Close' }).click();
   const current = await state(page.request);
   expect(
