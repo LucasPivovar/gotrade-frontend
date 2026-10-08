@@ -20,6 +20,7 @@ export type LoginTemplate =
   | 'minimal';
 
 export type Tenant = {
+  phone?: string;
   checkoutPriceCents?: number;
   webhook?: string;
   clientCount?: number;
@@ -404,6 +405,14 @@ export function validImage(url: string) {
   );
 }
 export function validateTenant(t: Tenant) {
+  if (
+    t.phone !== undefined &&
+    (typeof t.phone !== 'string' ||
+      t.phone.length > 25 ||
+      !/^[+0-9(). -]+$/.test(t.phone) ||
+      !/^\d{10,15}$/.test(t.phone.replace(/\D/g, '')))
+  )
+    throw Error('Informe um telefone válido.');
   requireStrings(t, [
     'id',
     'name',
@@ -523,3 +532,4 @@ export function validateCheckout(c: Checkout) {
   )
     throw Error('Ordem de blocos inválida.');
 }
+

@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import Panel from '@/app/panel';
 import ServiceUnavailable from './service-unavailable';
 import { workspace, scoped } from '@/lib/server';
-import { demoEnabled } from '@/lib/demo';
 export default async function WorkspacePage({
   view,
 }: {
@@ -21,7 +20,6 @@ export default async function WorkspacePage({
     return (
       <Panel
         initialView={view}
-        demoSample={demoEnabled()}
         initialSession={{
           state: scoped(w),
           role: w.role,

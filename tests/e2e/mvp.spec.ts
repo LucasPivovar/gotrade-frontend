@@ -450,7 +450,7 @@ test('tenant modal unifies payments, access and connection permissions', async (
   await expect(page).toHaveURL(/\/tenants$/);
 });
 
-test('settings persist catalog and price; new tenant link opens public checkout', async ({
+test('settings and new tenant form persist; legacy checkout price stays protected', async ({
   page,
   browser,
 }) => {
@@ -481,13 +481,53 @@ test('settings persist catalog and price; new tenant link opens public checkout'
   );
   await page.getByRole('button', { name: 'Tenants', exact: true }).click();
   await page.getByRole('button', { name: 'Novo tenant', exact: true }).click();
-  await page.getByRole('button', { name: 'Gerar link de contratação' }).click();
-  const input = page.getByLabel('Link da contratação', { exact: true });
-  await expect(input).toBeVisible();
-  const url = await input.inputValue();
+  const modal = page.getByRole('dialog');
+  const email = crypto.randomUUID() + '@example.test';
   await expect(
-    page.getByRole('button', { name: 'Copiar link', exact: true }),
-  ).toBeVisible();
+    modal.getByRole('button', { name: 'Gerar link de contratação' }),
+  ).toHaveCount(0);
+  await modal.getByLabel('Nome', { exact: true }).fill('Camila Teste');
+  await modal.getByLabel('E-mail', { exact: true }).fill(email);
+  await modal.getByLabel('Telefone', { exact: true }).fill('(11) 99999-9999');
+  await modal
+    .getByLabel('Nome da plataforma', { exact: true })
+    .fill('Camila Trade');
+  await modal
+    .getByRole('button', { name: 'Criar tenant', exact: true })
+    .click();
+  await expect(modal).toHaveCount(0);
+  await page.reload();
+  const created = (await state(page.request)).state.tenants.find(
+    (t) => t.email === email,
+  )!;
+  expect(created.name).toBe('Camila Trade');
+  expect(created.admin).toBe('Camila Teste');
+  expect(created.phone).toBe('(11) 99999-9999');
+  await page.getByRole('button', { name: 'Opções de Camila Trade' }).click();
+  await expect(modal).toContainText('(11) 99999-9999');
+  await modal.getByRole('button', { name: 'Close' }).click();
+  const current = await state(page.request);
+  expect(
+    (
+      await save(page.request, current, 'tenant', {
+        ...created,
+        phone: 'inválido',
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await save(page.request, current, 'tenant', {
+        ...created,
+        id: crypto.randomUUID(),
+        slug: 'outro-tenant',
+      })
+    ).status(),
+  ).toBe(400);
+  const legacy = await save(page.request, current, 'purchaseLink', {});
+  expect(legacy.status()).toBe(200);
+  const link = (await legacy.json()).state.purchaseLinks[0];
+  const url = origin + '/contratar/' + link.id;
   const ctx = await browser.newContext();
   const buyer = await ctx.newPage();
   await buyer.goto(url + '?valor=1');

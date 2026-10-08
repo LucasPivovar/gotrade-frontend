@@ -145,6 +145,8 @@ export default function TenantDirectory({
                     <dd>{actual.name}</dd>
                     <dt>Responsável</dt>
                     <dd>{actual.admin}</dd>
+                    <dt>Telefone</dt>
+                    <dd>{actual.phone || 'Não cadastrado'}</dd>
                     <dt>E-mail</dt>
                     <dd>{actual.email}</dd>
                     <dt>

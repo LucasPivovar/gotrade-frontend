@@ -27,7 +27,7 @@ import AdminSettings from '@/components/admin-settings';
 import { AdminPayments } from '@/components/admin-management';
 import TenantDirectory from '@/components/tenant-directory';
 import SupportCenter from '@/components/support-center';
-import PurchaseLinkModal from '@/components/purchase-link-modal';
+import NewTenantModal from '@/components/new-tenant-modal';
 const sections = [
   { id: 'platform', label: 'Plataforma', icon: Palette },
   { id: 'connections', label: 'Conexões', icon: Plug },
@@ -43,11 +43,9 @@ const adminSections = [
 export default function Panel({
   initialView = 'platform',
   initialSession,
-  demoSample = false,
 }: {
   initialView?: string;
   initialSession?: Session;
-  demoSample?: boolean;
 }) {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(
@@ -66,8 +64,7 @@ export default function Panel({
     [notice, setNotice] = useState(''),
     [search, setSearch] = useState(''),
     [statusFilter, setStatusFilter] = useState('all'),
-    [creating, setCreating] = useState(false),
-    [linkBaseline, setLinkBaseline] = useState('');
+    [creating, setCreating] = useState(false);
   const update = (s: Session) => {
     latest.current = s;
     setSession(s);
@@ -298,7 +295,6 @@ export default function Panel({
               <button
                 className="gt-button gt-primary"
                 onClick={() => {
-                  setLinkBaseline(session.state.purchaseLinks?.[0]?.id || '');
                   setCreating(true);
                 }}
               >
@@ -473,18 +469,12 @@ export default function Panel({
           )}
         </main>
       </div>
-      <PurchaseLinkModal
-        demoSample={demoSample}
+      <NewTenantModal
         open={creating}
         onClose={() => setCreating(false)}
         busy={busy}
-        link={
-          session.state.purchaseLinks?.[0]?.id !== linkBaseline
-            ? session.state.purchaseLinks?.[0]
-            : undefined
-        }
-        amountCents={session.state.settings?.tenantPriceCents || 300000}
-        onGenerate={() => save('purchaseLink', {})}
+        tenants={tenants}
+        onSave={(t) => save('tenant', t)}
       />
     </div>
   );
