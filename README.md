@@ -46,7 +46,7 @@ A plataforma nasce junto com o tenant. O formulário Plataforma permite domínio
 
 O admin concentra a gestão na lista de tenants, com filtros de ativos, inativos e sem domínio, e busca por nome, responsável, e-mail e domínio. O menu de três pontos abre um modal com plataforma, clientes demonstrativos, responsável, status e conexões permitidas. Suporte e financeiro foram removidos do admin. Configurações contém somente Minha conta, para alterar e-mail e senha.
 
-O botão **Novo tenant** abre um formulário com nome do responsável, e-mail e nome da plataforma. O cadastro aparece imediatamente na lista. Links de contratação anteriores continuam acessíveis, mas não fazem parte desse botão. O provisionamento de credenciais e os pagamentos reais dependem da futura integração de backend.
+O botão **Novo tenant** abre um formulário com nome do responsável, e-mail e nome da plataforma. O cadastro permite selecionar as corretoras pelo mesmo seletor da edição; as conexões escolhidas ficam salvas no tenant. O cadastro aparece imediatamente na lista. Links de contratação anteriores continuam acessíveis, mas não fazem parte desse botão. O provisionamento de credenciais e os pagamentos reais dependem da futura integração de backend.
 
 O tenant possui Plataforma, Conexões, Financeiro e Configurações. Financeiro mostra somente os pagamentos do próprio tenant à GoTrade, com totais por situação, histórico e filtro. O tenant não pode modificar esses registros. No modo de demonstração, há pagamentos fictícios; fora dele, a tela usa os registros existentes e mostra um estado vazio quando não houver pagamentos. Suporte foi removido dos dois painéis; a rota antiga redireciona para o início.
 

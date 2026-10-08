@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import ConnectionPicker from '@/components/connection-picker';
 import { createApplication } from '@/lib/application';
 import { validateTenant, type Tenant } from '@/lib/model';
 export default function NewTenantModal({
@@ -14,16 +15,19 @@ export default function NewTenantModal({
   onClose,
   busy,
   tenants,
+  catalog,
   onSave,
 }: {
   open: boolean;
   onClose: () => void;
   busy: boolean;
   tenants: Tenant[];
+  catalog: string[];
   onSave: (tenant: Tenant) => Promise<boolean>;
 }) {
   const [name, setName] = useState(''),
     [email, setEmail] = useState(''),
+    [connections, setConnections] = useState<string[]>([]),
     [platform, setPlatform] = useState(''),
     [error, setError] = useState('');
   return (
@@ -51,6 +55,7 @@ export default function NewTenantModal({
                   { name: platform.trim(), color: '#4fbb83' },
                   tenants,
                 ),
+                connections: connections.filter((p) => catalog.includes(p)),
                 admin: name.trim(),
                 email: email.trim().toLowerCase(),
               };
@@ -59,6 +64,7 @@ export default function NewTenantModal({
                 setName('');
                 setEmail('');
                 setPlatform('');
+                setConnections([]);
                 onClose();
               } else
                 setError(
@@ -103,6 +109,12 @@ export default function NewTenantModal({
               onChange={(e) => setPlatform(e.target.value)}
             />
           </label>
+          <ConnectionPicker
+            catalog={catalog}
+            value={connections}
+            onChange={setConnections}
+            disabled={busy}
+          />
           {error && (
             <p role="alert" className="gt-form-error">
               {error}

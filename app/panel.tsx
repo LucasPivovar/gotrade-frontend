@@ -411,6 +411,7 @@ export default function Panel({
         onClose={() => setCreating(false)}
         busy={busy}
         tenants={tenants}
+        catalog={catalog}
         onSave={(t) => save('tenant', t)}
       />
     </div>

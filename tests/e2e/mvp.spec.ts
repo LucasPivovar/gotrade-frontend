@@ -454,6 +454,11 @@ test('settings and new tenant form persist; legacy checkout price stays protecte
   await modal
     .getByLabel('Nome da plataforma', { exact: true })
     .fill('Camila Trade');
+  await modal.getByLabel('Adicionar conexão').selectOption('Bybit');
+  await modal.getByLabel('Adicionar conexão').selectOption('XGlobal');
+  await modal.getByLabel('Bybit', { exact: true }).click();
+  await expect(modal.getByLabel('Bybit', { exact: true })).toHaveCount(0);
+  await modal.getByLabel('Adicionar conexão').selectOption('Bybit');
   await modal
     .getByRole('button', { name: 'Criar tenant', exact: true })
     .click();
@@ -465,8 +470,17 @@ test('settings and new tenant form persist; legacy checkout price stays protecte
   expect(created.name).toBe('Camila Trade');
   expect(created.admin).toBe('Camila Teste');
   expect(created.phone).toBeUndefined();
+  expect(created.connections).toEqual(['XGlobal', 'Bybit']);
   await page.getByRole('button', { name: 'Opções de Camila Trade' }).click();
   await expect(modal).toContainText('Camila Teste');
+  await modal.getByRole('button', { name: 'Acesso e conexões' }).click();
+  await expect(modal.getByLabel('XGlobal', { exact: true })).toBeChecked();
+  await expect(modal.getByLabel('Bybit', { exact: true })).toBeChecked();
+  await modal.getByLabel('Adicionar conexão').selectOption('Admiral');
+  await modal.getByRole('button', { name: 'Salvar tenant' }).click();
+  await expect(
+    modal.getByText('Alterações salvas.', { exact: true }),
+  ).toBeVisible();
   await modal.getByRole('button', { name: 'Close' }).click();
   const current = await state(page.request);
   expect(

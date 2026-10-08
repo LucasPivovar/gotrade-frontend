@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import ConnectionPicker from '@/components/connection-picker';
 import type { Tenant } from '@/lib/model';
 export default function TenantDirectory({
   tenants,
@@ -207,55 +208,14 @@ export default function TenantDirectory({
                       <option value="suspended">Inativo</option>
                     </select>
                   </label>
-                  <label>
-                    Adicionar conexão
-                    <select
-                      aria-label="Adicionar conexão"
-                      value=""
-                      onChange={(e) => {
-                        if (e.target.value)
-                          setSelected({
-                            ...selected,
-                            connections: [
-                              ...selected.connections,
-                              e.target.value,
-                            ],
-                          });
-                      }}
-                    >
-                      <option value="">Selecione um meio disponível</option>
-                      {catalog
-                        .filter((p) => !selected.connections.includes(p))
-                        .map((p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
-                  <div className="gt-connection-box">
-                    {selected.connections.length ? (
-                      selected.connections.map((p) => (
-                        <label className="gt-connection-chip" key={p}>
-                          <input
-                            type="checkbox"
-                            checked
-                            onChange={() =>
-                              setSelected({
-                                ...selected,
-                                connections: selected.connections.filter(
-                                  (x) => x !== p,
-                                ),
-                              })
-                            }
-                          />
-                          {p}
-                        </label>
-                      ))
-                    ) : (
-                      <p className="gt-muted">Nenhuma conexão habilitada.</p>
-                    )}
-                  </div>
+                  <ConnectionPicker
+                    catalog={catalog}
+                    value={selected.connections}
+                    disabled={busy}
+                    onChange={(connections) =>
+                      setSelected({ ...selected, connections })
+                    }
+                  />
                   <p className="gt-muted">
                     Inativar bloqueia o acesso e a abertura da plataforma. As
                     configurações são preservadas.
